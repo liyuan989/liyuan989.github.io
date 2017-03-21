@@ -1,0 +1,812 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css"/>
+
+
+
+
+  <link href="//fonts.googleapis.com/css?family=Lato:300,400,700,400italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=0.5.0" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=0.5.0" />
+
+
+
+
+
+
+<meta name="description" content="在密码学中，「凯撒密码」是一种最简单且最广为人知的加密技术。它是一种替换加密技术，明文中所有字母都在字母表上向后或向前按照一个固定数目进行偏移后被替换成密文。例如当偏移量为3时，所有的A被替换为D，B被替换为E。这个加密方法是以凯撒的名字命名的，因为当年凯撒用此方法与将军们进行联络。
+方法凯撒密码的替换方法是通过排列明文和密文字母表，密文字母通过将明文字母向左或向右移动一个固定数目的位置。例如当偏">
+<meta property="og:type" content="article">
+<meta property="og:title" content="凯撒密码">
+<meta property="og:url" content="http://originlee.com/2015/03/08/caesar-cipher/index.html">
+<meta property="og:site_name" content="Less is more">
+<meta property="og:description" content="在密码学中，「凯撒密码」是一种最简单且最广为人知的加密技术。它是一种替换加密技术，明文中所有字母都在字母表上向后或向前按照一个固定数目进行偏移后被替换成密文。例如当偏移量为3时，所有的A被替换为D，B被替换为E。这个加密方法是以凯撒的名字命名的，因为当年凯撒用此方法与将军们进行联络。
+方法凯撒密码的替换方法是通过排列明文和密文字母表，密文字母通过将明文字母向左或向右移动一个固定数目的位置。例如当偏">
+<meta property="og:updated_time" content="2016-06-19T17:21:44.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="凯撒密码">
+<meta name="twitter:description" content="在密码学中，「凯撒密码」是一种最简单且最广为人知的加密技术。它是一种替换加密技术，明文中所有字母都在字母表上向后或向前按照一个固定数目进行偏移后被替换成密文。例如当偏移量为3时，所有的A被替换为D，B被替换为E。这个加密方法是以凯撒的名字命名的，因为当年凯撒用此方法与将军们进行联络。
+方法凯撒密码的替换方法是通过排列明文和密文字母表，密文字母通过将明文字母向左或向右移动一个固定数目的位置。例如当偏">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+  <title> 凯撒密码 - Less is more </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <!--
+      <span class="logo-line-before"><i></i></span>
+      -->
+      <span class="site-title">Less is more</span>
+      <!--
+      <span class="logo-line-after"><i></i></span>
+      -->
+    </a>
+  </div>
+  <p class="site-subtitle"></p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-home fa-fw"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-th fa-fw"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-archive fa-fw"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-user fa-fw"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                凯撒密码
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2015-03-08T00:30:45+08:00" content="2015-03-08">
+              2015-03-08
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/数据结构与算法/" itemprop="url" rel="index">
+                    <span itemprop="name">数据结构与算法</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/2015/03/08/caesar-cipher/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2015/03/08/caesar-cipher/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>在密码学中，「凯撒密码」是一种最简单且最广为人知的加密技术。它是一种替换加密技术，明文中所有字母都在字母表上向后或向前按照一个固定数目进行偏移后被替换成密文。例如当偏移量为3时，所有的A被替换为D，B被替换为E。这个加密方法是以凯撒的名字命名的，因为当年凯撒用此方法与将军们进行联络。</p>
+<h2 id="方法"><a href="#方法" class="headerlink" title="方法"></a>方法</h2><p>凯撒密码的替换方法是通过排列明文和密文字母表，密文字母通过将明文字母向左或向右移动一个固定数目的位置。例如当偏移量是左移3时（解密是密钥就是3）：<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">明文：ABCDEFGHIJK</span><br><span class="line">密文：DEFGHIJKLMN</span><br></pre></td></tr></table></figure></p>
+<p>使用时，加密者查找明文字母表中需要加密的消息中每一个字母所在的位置，并写下密文字母表中对应的字母。解密者则根据事先已知的密钥（偏移量和偏移方向）反过来操作，得到传递的实质信息。例如：<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">明文：HELLO WORLD</span><br><span class="line">密文：EBIIL TLOIA</span><br></pre></td></tr></table></figure></p>
+<p>凯撒密码的加密解密方法还可以用数学的求余来计算。用数字0-25代表26个英文字母，这样密钥偏移量的加密方法即为：<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">f(x) = (x + n) mod 26</span><br></pre></td></tr></table></figure></p>
+<p>解密方法为：<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">g(x) = (x - n) mod 26</span><br></pre></td></tr></table></figure></p>
+<a id="more"></a>
+<h2 id="实例"><a href="#实例" class="headerlink" title="实例"></a>实例</h2><p>前段时间在知乎上看到有个女生提了一个关于破解密码的小问题</p>
+<blockquote>
+<p>可以帮忙破解一个密码吗？正文为:</p>
+<p>VRPHWLPHV L ZDQW WR FKDW ZLWK BRX, EXW L KDYH QR UHDVRQ WR FKDW ZLWK BRX</p>
+</blockquote>
+<p>可以看到这段密文每隔几个字母就有个空格，并且还有一个标点符号，那么可以推断为使用凯撒加密的方法进行偏移加密过（若是其他复杂的加密方法一般不会出现这样规则的字母序列，而是各种乱码符号），并且空格和标点可能都没有加密。</p>
+<p>那么如何破解这段密码呢？</p>
+<p>「<a href="http://en.wikipedia.org/wiki/Method_of_exhaustion" target="_blank" rel="external">穷举法</a>」是常见破解凯撒密码的方法，即穷举所有可能的偏移量（密钥）并翻译输出明文，然后在这输出的所有明文中人工选取出一个或多个有意义的明文集合，并从这些有意义的明文集合中分析、识别出最终的结果。</p>
+<p>因为计算机语言都是用ASCII码表示字符，即字符A-Z是用数值65-90来表示的，并且在穷举偏移量进行计算的时候，偏移量选取的是非负整数0-25，所以在计算时若密文字符ASCII码值加上密钥ASCII码值（偏移量）之和大于90，就要减去26，不然该ASCII码值就不能表示一个字符了，加密者在加密的时候基本上也是这样考虑的。</p>
+<p>下面是我当时在这个问题下写解密代码：<br><figure class="highlight"><table><tr><td class="code"><pre><span class="line">#include &lt;string&gt;</span><br><span class="line">#include &lt;iostream&gt;</span><br><span class="line"></span><br><span class="line">int main(int argc, char const *argv[])</span><br><span class="line">&#123;</span><br><span class="line">    std::string cipher = "VRPHWLPHV L ZDQW WR FKDW ZLWK BRX, "</span><br><span class="line">                         "EXW L KDYH QR UHDVRQ WR FKDW ZLWK BRX";</span><br><span class="line">    std::string confession(cipher.size(), ' ');</span><br><span class="line">    for (int i = 0; i &lt;= 25; ++i)</span><br><span class="line">    &#123;</span><br><span class="line">        for (size_t j = 0; j &lt; cipher.size(); ++j)</span><br><span class="line">        &#123;</span><br><span class="line">            if (cipher[j] != ' ' &amp;&amp; cipher[j] != ',')</span><br><span class="line">            &#123;</span><br><span class="line">                if (cipher[j] + i &gt;= 'A' &amp;&amp; cipher[j] + i &lt;= 'Z')</span><br><span class="line">                &#123;</span><br><span class="line">                    confession[j] = static_cast&lt;char&gt;(cipher[j] + i);</span><br><span class="line">                &#125;</span><br><span class="line">                else</span><br><span class="line">                &#123;</span><br><span class="line">                    confession[j] = static_cast&lt;char&gt;(cipher[j] + i - 26);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            else</span><br><span class="line">            &#123;</span><br><span class="line">                confession[j] = cipher[j];</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        std::cout &lt;&lt; confession &lt;&lt; std::endl;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这段代码的运行结果为：<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">XTRJYNRJX N BFSY YT HMFY BNYM DTZ, GZY N MFAJ ST WJFXTS YT HMFY BNYM DTZ</span><br><span class="line">YUSKZOSKY O CGTZ ZU INGZ COZN EUA, HAZ O NGBK TU XKGYUT ZU INGZ COZN EUA</span><br><span class="line">ZVTLAPTLZ P DHUA AV JOHA DPAO FVB, IBA P OHCL UV YLHZVU AV JOHA DPAO FVB</span><br><span class="line">AWUMBQUMA Q EIVB BW KPIB EQBP GWC, JCB Q PIDM VW ZMIAWV BW KPIB EQBP GWC</span><br><span class="line">BXVNCRVNB R FJWC CX LQJC FRCQ HXD, KDC R QJEN WX ANJBXW CX LQJC FRCQ HXD</span><br><span class="line">CYWODSWOC S GKXD DY MRKD GSDR IYE, LED S RKFO XY BOKCYX DY MRKD GSDR IYE</span><br><span class="line">DZXPETXPD T HLYE EZ NSLE HTES JZF, MFE T SLGP YZ CPLDZY EZ NSLE HTES JZF</span><br><span class="line">EAYQFUYQE U IMZF FA OTMF IUFT KAG, NGF U TMHQ ZA DQMEAZ FA OTMF IUFT KAG</span><br><span class="line">FBZRGVZRF V JNAG GB PUNG JVGU LBH, OHG V UNIR AB ERNFBA GB PUNG JVGU LBH</span><br><span class="line">GCASHWASG W KOBH HC QVOH KWHV MCI, PIH W VOJS BC FSOGCB HC QVOH KWHV MCI</span><br><span class="line">HDBTIXBTH X LPCI ID RWPI LXIW NDJ, QJI X WPKT CD GTPHDC ID RWPI LXIW NDJ</span><br><span class="line">IECUJYCUI Y MQDJ JE SXQJ MYJX OEK, RKJ Y XQLU DE HUQIED JE SXQJ MYJX OEK</span><br><span class="line">JFDVKZDVJ Z NREK KF TYRK NZKY PFL, SLK Z YRMV EF IVRJFE KF TYRK NZKY PFL</span><br><span class="line">KGEWLAEWK A OSFL LG UZSL OALZ QGM, TML A ZSNW FG JWSKGF LG UZSL OALZ QGM</span><br><span class="line">LHFXMBFXL B PTGM MH VATM PBMA RHN, UNM B ATOX GH KXTLHG MH VATM PBMA RHN</span><br><span class="line">MIGYNCGYM C QUHN NI WBUN QCNB SIO, VON C BUPY HI LYUMIH NI WBUN QCNB SIO</span><br><span class="line">NJHZODHZN D RVIO OJ XCVO RDOC TJP, WPO D CVQZ IJ MZVNJI OJ XCVO RDOC TJP</span><br><span class="line">OKIAPEIAO E SWJP PK YDWP SEPD UKQ, XQP E DWRA JK NAWOKJ PK YDWP SEPD UKQ</span><br><span class="line">PLJBQFJBP F TXKQ QL ZEXQ TFQE VLR, YRQ F EXSB KL OBXPLK QL ZEXQ TFQE VLR</span><br><span class="line">QMKCRGKCQ G UYLR RM AFYR UGRF WMS, ZSR G FYTC LM PCYQML RM AFYR UGRF WMS</span><br><span class="line">RNLDSHLDR H VZMS SN BGZS VHSG XNT, ATS H GZUD MN QDZRNM SN BGZS VHSG XNT</span><br><span class="line">SOMETIMES I WANT TO CHAT WITH YOU, BUT I HAVE NO REASON TO CHAT WITH YOU</span><br><span class="line">TPNFUJNFT J XBOU UP DIBU XJUI ZPV, CVU J IBWF OP SFBTPO UP DIBU XJUI ZPV</span><br><span class="line">UQOGVKOGU K YCPV VQ EJCV YKVJ AQW, DWV K JCXG PQ TGCUQP VQ EJCV YKVJ AQW</span><br></pre></td></tr></table></figure></p>
+<p>可以很容易的分析出只有倒数第三行是一段有意义的语句，它就是这段明文的密文信息。</p>
+<h2 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h2><p>题外话，不知道你注意到代码中我用了confession来命名密文变量没，相信看到密文结果后就应该明白我的意思了。记得在知乎上看到某个自称混迹密码学主题很久的人说过一句话：「对于男女之间，但凡看不懂的都是表白。」</p>
+<p>大约是有一定道理的。</p>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><ol>
+<li>Wikipedia. <a href="http://en.wikipedia.org/wiki/Caesar_cipher" target="_blank" rel="external">Caesar Cipher</a></li>
+<li>Wikipedia. <a href="http://en.wikipedia.org/wiki/Method_of_exhaustion" target="_blank" rel="external">Method of exhaustion</a></li>
+</ol>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2015/03/06/permutation-algorithm-for-eight-queen/" rel="next" title="八皇后问题之全排列算法">
+                <i class="fa fa-chevron-left"></i> 八皇后问题之全排列算法
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2015/03/14/analysis-google-protobuf-reflection/" rel="prev" title="解析Google Protocol Buffer消息类型的自动反射原理">
+                解析Google Protocol Buffer消息类型的自动反射原理 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="disqus_thread">
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="Li Yuan" />
+          <p class="site-author-name" itemprop="name">Li Yuan</p>
+          <p class="site-description motion-element" itemprop="description">种一棵树最好的时间是十年前，其次是现在</p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">29</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/categories">
+                <span class="site-state-item-count">8</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="mailto:liyuan989@gmail.com" target="_blank">
+                  
+                    <i class="fa fa-envelope"></i>
+                  
+                  Email
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://cn.linkedin.com/in/liyuan989" target="_blank">
+                  
+                    <i class="fa fa-linkedin"></i>
+                  
+                  LinkedIn
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liyuan989" target="_blank">
+                  
+                    <i class="fa fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/origin-989" target="_blank">
+                  
+                    <i class="fa fa-globe"></i>
+                  
+                  知乎
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/liyuan989" target="_blank">
+                  
+                    <i class="fa fa-weibo"></i>
+                  
+                  微博
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+          <div class="cc-license motion-element" itemprop="license">
+            <a href="http://creativecommons.org/licenses/by/4.0" class="cc-opacity" target="_blank">
+              <img src="/images/cc-by.svg" alt="Creative Commons" />
+            </a>
+          </div>
+        
+
+        
+        <div class="links-of-blogroll motion-element">
+          
+        </div>
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc-indicator-top post-toc-indicator">
+            <i class="fa fa-angle-double-up"></i>
+          </div>
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#方法"><span class="nav-number">1.</span> <span class="nav-text">方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实例"><span class="nav-number">2.</span> <span class="nav-text">实例</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#结语"><span class="nav-number">3.</span> <span class="nav-text">结语</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考文献"><span class="nav-number">4.</span> <span class="nav-text">参考文献</span></a></li></ol></div>
+            
+          </div>
+          <div class="post-toc-indicator-bottom post-toc-indicator">
+            <i class="fa fa-angle-double-down"></i>
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy;
+   2014 - 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Li Yuan</span>
+</div>
+<!--
+<div class="powered-by">
+  由 <a class="theme-link" href="http://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+-->
+
+
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+
+  
+
+
+
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js"></script>
+
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js"></script>
+
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=0.5.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=0.5.0"></script>
+
+
+
+  
+  
+
+  
+  
+<script type="text/javascript" src="/js/src/scrollspy.js?v=0.5.0"></script>
+
+<script type="text/javascript" id="sidebar.toc.highlight">
+  $(document).ready(function () {
+    var tocSelector = '.post-toc';
+    var $tocSelector = $(tocSelector);
+    var activeCurrentSelector = '.active-current';
+
+    $tocSelector
+      .on('activate.bs.scrollspy', function () {
+        var $currentActiveElement = $(tocSelector + ' .active').last();
+
+        removeCurrentActiveClass();
+        $currentActiveElement.addClass('active-current');
+
+        $tocSelector[0].scrollTop = $currentActiveElement.position().top;
+      })
+      .on('clear.bs.scrollspy', function () {
+        removeCurrentActiveClass();
+      });
+
+    function removeCurrentActiveClass () {
+      $(tocSelector + ' ' + activeCurrentSelector)
+        .removeClass(activeCurrentSelector.substring(1));
+    }
+
+    function processTOC () {
+      getTOCMaxHeight();
+      toggleTOCOverflowIndicators();
+    }
+
+    function getTOCMaxHeight () {
+      var height = $('.sidebar').height() -
+                   $tocSelector.position().top -
+                   $('.post-toc-indicator-bottom').height();
+
+      $tocSelector.css('height', height);
+
+      return height;
+    }
+
+    function toggleTOCOverflowIndicators () {
+      tocOverflowIndicator(
+        '.post-toc-indicator-top',
+        $tocSelector.scrollTop() > 0 ? 'show' : 'hide'
+      );
+
+      tocOverflowIndicator(
+        '.post-toc-indicator-bottom',
+        $tocSelector.scrollTop() >= $tocSelector.find('ol').height() - $tocSelector.height() ? 'hide' : 'show'
+      )
+    }
+
+    $(document).on('sidebar.motion.complete', function () {
+      processTOC();
+    });
+
+    $('body').scrollspy({ target: tocSelector });
+    $(window).on('resize', function () {
+      if ( $('.sidebar').hasClass('sidebar-active') ) {
+        processTOC();
+      }
+    });
+
+    onScroll($tocSelector);
+
+    function onScroll (element) {
+      element.on('mousewheel DOMMouseScroll', function (event) {
+          var oe = event.originalEvent;
+          var delta = oe.wheelDelta || -oe.detail;
+
+          this.scrollTop += ( delta < 0 ? 1 : -1 ) * 30;
+          event.preventDefault();
+
+          toggleTOCOverflowIndicators();
+      });
+    }
+
+    function tocOverflowIndicator (indicator, action) {
+      var $indicator = $(indicator);
+      var opacity = action === 'show' ? 1 : 0;
+      $indicator.velocity ?
+        $indicator.velocity('stop').velocity({
+          opacity: opacity
+        }, { duration: 100 }) :
+        $indicator.stop().animate({
+          opacity: opacity
+        }, 100);
+    }
+
+  });
+</script>
+
+<script type="text/javascript" id="sidebar.nav">
+  $(document).ready(function () {
+    var html = $('html');
+    var TAB_ANIMATE_DURATION = 200;
+    var hasVelocity = $.isFunction(html.velocity);
+
+    $('.sidebar-nav li').on('click', function () {
+      var item = $(this);
+      var activeTabClassName = 'sidebar-nav-active';
+      var activePanelClassName = 'sidebar-panel-active';
+      if (item.hasClass(activeTabClassName)) {
+        return;
+      }
+
+      var currentTarget = $('.' + activePanelClassName);
+      var target = $('.' + item.data('target'));
+
+      hasVelocity ?
+        currentTarget.velocity('transition.slideUpOut', TAB_ANIMATE_DURATION, function () {
+          target
+            .velocity('stop')
+            .velocity('transition.slideDownIn', TAB_ANIMATE_DURATION)
+            .addClass(activePanelClassName);
+        }) :
+        currentTarget.animate({ opacity: 0 }, TAB_ANIMATE_DURATION, function () {
+          currentTarget.hide();
+          target
+            .stop()
+            .css({'opacity': 0, 'display': 'block'})
+            .animate({ opacity: 1 }, TAB_ANIMATE_DURATION, function () {
+              currentTarget.removeClass(activePanelClassName);
+              target.addClass(activePanelClassName);
+            });
+        });
+
+      item.siblings().removeClass(activeTabClassName);
+      item.addClass(activeTabClassName);
+    });
+
+    $('.post-toc a').on('click', function (e) {
+      e.preventDefault();
+      var targetSelector = NexT.utils.escapeSelector(this.getAttribute('href'));
+      var offset = $(targetSelector).offset().top;
+      hasVelocity ?
+        html.velocity('stop').velocity('scroll', {
+          offset: offset  + 'px',
+          mobileHA: false
+        }) :
+        $('html, body').stop().animate({
+          scrollTop: offset
+        }, 500);
+    });
+
+    // Expand sidebar on post detail page by default, when post has a toc.
+    NexT.motion.middleWares.sidebar = function () {
+      var $tocContent = $('.post-toc-content');
+
+      if (CONFIG.sidebar.display === 'post' || CONFIG.sidebar.display === 'always') {
+        if ($tocContent.length > 0 && $tocContent.html().trim().length > 0) {
+          NexT.utils.displaySidebar();
+        }
+      }
+    };
+  });
+</script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=0.5.0"></script>
+
+
+
+  
+
+
+
+  
+
+    <script type="text/javascript">
+      var disqus_shortname = 'originlee';
+      var disqus_identifier = '2015/03/08/caesar-cipher/';
+      var disqus_title = '凯撒密码';
+      var disqus_url = 'http://originlee.com/2015/03/08/caesar-cipher/';
+
+      function run_disqus_script(disqus_script){
+        var dsq = document.createElement('script');
+        dsq.type = 'text/javascript';
+        dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      }
+
+      run_disqus_script('count.js');
+      
+        run_disqus_script('embed.js');
+      
+    </script>
+  
+
+
+
+  
+  
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,845 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css"/>
+
+
+
+
+  <link href="//fonts.googleapis.com/css?family=Lato:300,400,700,400italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=0.5.0" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=0.5.0" />
+
+
+
+
+
+
+<meta name="description" content="2014可以算作真正意义上参加工作的第一年（虽然2013毕业，但是毕业后的半年基本是处于迷糊状态），心态上、技术上都有了一个比较大的转变。以前心态上总是比较浮躁，想着捷径啊快速什么的，现在觉得做事情，尤其是做技术得沉淀下来，慢慢积累。
+工作上的事情基本是按部就班的进行，感觉没有什么想说的，但是这一年利用业余时间看了一些技术书籍，这里就按时间的顺序简单的总结一下。
+
+《C++ Primer》
+
+刚毕">
+<meta property="og:type" content="article">
+<meta property="og:title" content="2014年终总结">
+<meta property="og:url" content="http://originlee.com/2015/01/09/year-end-summary-of-2014/index.html">
+<meta property="og:site_name" content="Less is more">
+<meta property="og:description" content="2014可以算作真正意义上参加工作的第一年（虽然2013毕业，但是毕业后的半年基本是处于迷糊状态），心态上、技术上都有了一个比较大的转变。以前心态上总是比较浮躁，想着捷径啊快速什么的，现在觉得做事情，尤其是做技术得沉淀下来，慢慢积累。
+工作上的事情基本是按部就班的进行，感觉没有什么想说的，但是这一年利用业余时间看了一些技术书籍，这里就按时间的顺序简单的总结一下。
+
+《C++ Primer》
+
+刚毕">
+<meta property="og:image" content="http://7vzmyh.com1.z0.glb.clouddn.com/blog-cover_cxx_primer.jpg">
+<meta property="og:image" content="http://7vzmyh.com1.z0.glb.clouddn.com/blog-cover_effective_cxx.jpg">
+<meta property="og:image" content="http://7vzmyh.com1.z0.glb.clouddn.com/blog-cover_effective_stl.jpg">
+<meta property="og:image" content="http://7vzmyh.com1.z0.glb.clouddn.com/blog-ccover_chatting_data_structure.jpg">
+<meta property="og:image" content="http://7vzmyh.com1.z0.glb.clouddn.com/blog-cover_csapp.jpg">
+<meta property="og:image" content="http://7vzmyh.com1.z0.glb.clouddn.com/blog-cover_inside_the_cxx_object_model.jpg">
+<meta property="og:updated_time" content="2016-06-19T17:21:44.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="2014年终总结">
+<meta name="twitter:description" content="2014可以算作真正意义上参加工作的第一年（虽然2013毕业，但是毕业后的半年基本是处于迷糊状态），心态上、技术上都有了一个比较大的转变。以前心态上总是比较浮躁，想着捷径啊快速什么的，现在觉得做事情，尤其是做技术得沉淀下来，慢慢积累。
+工作上的事情基本是按部就班的进行，感觉没有什么想说的，但是这一年利用业余时间看了一些技术书籍，这里就按时间的顺序简单的总结一下。
+
+《C++ Primer》
+
+刚毕">
+<meta name="twitter:image" content="http://7vzmyh.com1.z0.glb.clouddn.com/blog-cover_cxx_primer.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+  <title> 2014年终总结 - Less is more </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <!--
+      <span class="logo-line-before"><i></i></span>
+      -->
+      <span class="site-title">Less is more</span>
+      <!--
+      <span class="logo-line-after"><i></i></span>
+      -->
+    </a>
+  </div>
+  <p class="site-subtitle"></p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-home fa-fw"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-th fa-fw"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-archive fa-fw"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-user fa-fw"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                2014年终总结
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2015-01-09T14:46:00+08:00" content="2015-01-09">
+              2015-01-09
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/生活心情/" itemprop="url" rel="index">
+                    <span itemprop="name">生活心情</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/2015/01/09/year-end-summary-of-2014/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2015/01/09/year-end-summary-of-2014/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>2014可以算作真正意义上参加工作的第一年（虽然2013毕业，但是毕业后的半年基本是处于迷糊状态），心态上、技术上都有了一个比较大的转变。以前心态上总是比较浮躁，想着捷径啊快速什么的，现在觉得做事情，尤其是做技术得沉淀下来，慢慢积累。</p>
+<p>工作上的事情基本是按部就班的进行，感觉没有什么想说的，但是这一年利用业余时间看了一些技术书籍，这里就按时间的顺序简单的总结一下。</p>
+<ul>
+<li>《C++ Primer》<br><img src="http://7vzmyh.com1.z0.glb.clouddn.com/blog-cover_cxx_primer.jpg" alt=""></li>
+</ul>
+<p>刚毕业的时候对于c++，嗯，基本就是学校课堂上那一点c with class的东西，以及做过几个课程设计的水平。所以选择了这本经典的大部头来学习，之前在网上看到很多人说这本书太厚读起来困难什么的，其实我觉得只要真的静下来读的话，没那么难，作者写的还是非常简单易懂的。</p>
+<p>因为想比较系统的学习一下c++的语法，在阅读学习的时候基本上碰到不太理解的地方就会停下来敲代码实践思考一下，每一道课后习题都敲代码做了一遍。最后读完后统计了一下课后习题的练习代码都有七八千行，这个是一开始没想到的。</p>
+<p>学习整本书的的过程大概花了2-3个月的时间，与大学课堂上学的那一点c with class相比，收获非常大。</p>
+<ul>
+<li>《Effective C++》<br><img src="http://7vzmyh.com1.z0.glb.clouddn.com/blog-cover_effective_cxx.jpg" alt=""></li>
+</ul>
+<p>读完了c++ primer之后就寻思着读本进阶一点的书籍，于是另外一本经典的书籍自然的进入了我的视线中。这本书主要是一本谈c++经验、避免踏入各种坑的书籍，里面讲了很多非常好的经验，比如视c++为语言联邦、以对象管理资源(RAII)、尽量以传引用代替传值、尽量以组合代替继承、善用智能指针等等。个人认为。目前来说，对我最为有益和深刻的莫过于RAII了，有了它可以在一定程度上很好的避免资源泄露。当然里面也有一些经验谈目前还理解的不是太深刻，需要一定的经验后再去阅读消化了。大概用了1个半月的时间读完了这本书。<a id="more"></a></p>
+<ul>
+<li>《Effective STL》<br><img src="http://7vzmyh.com1.z0.glb.clouddn.com/blog-cover_effective_stl.jpg" alt=""></li>
+</ul>
+<p>STL始终是c++绕不开的一个东西，可能有些人是stl洁癖，喜欢用c标准库的东西或者自己造轮子，但我个人来说还是比较喜欢stl的。因为想多了解一些使用STL的技巧、所以就买了这本书回来阅读了，这本书比较详细的介绍了使用STL时了一些需要注意的地方，比如各种容器迭代器失效的情况，比如vector和string的clear函数并没有释放空间，可以用临时对象swap的方式释放空间，比如erase、remove惯用法等等。用了将近一个月的时间来阅读这本书，读完了它后对stl的理解加深了不少。</p>
+<ul>
+<li>《大话数据结构》<br><img src="http://7vzmyh.com1.z0.glb.clouddn.com/blog-ccover_chatting_data_structure.jpg" alt=""></li>
+</ul>
+<p>之前用了很多的业余时间学习c++方面的东西，想着大学学的数据结构也都忘的记不起多少了，于是在豆瓣上找了一本评价还不错的书买回来学习了。其实开始的时候是准备学习算法导论的，大概看了前面二三十页，对里面一些数学证明读起来比较吃力，orz。所以就换了本稍微简单易懂点的。</p>
+<p>其实这本书我到没有非常仔细的阅读、基本是对书上介绍的每一种数据结构和算法的概念和思想读完理解一下，然后就自己用c++实现敲代码去了。</p>
+<p>主要涉及到了线性表、栈、队列、串(暴力匹配、KMP)、二叉树（平衡二叉树树、红黑树、霍夫曼树），图的算法（BFS、DFS、最小生成树、prim、kruskal、dijkstra、floyd、拓扑排序、关键路径）以及各种排序算法（冒泡排序、简单排序、插入排序、希尔排序、堆排序、归并排序、快速排序）。主要是将这些数据结构和算法自己用c++实现了一遍，但是并没有去做一些题目、根据不同的情况来选用、综合这些基本算法。时间一长还是容易忘记，比如在我写下这篇blog的时候，上面的一些算法只能说出基本的思想和思路，要实际手写的话估计还是得费劲想或者再看书熟悉熟悉才行。不过我觉得另一方面的好处是知道这些算法的思想、用途以及时间复杂度，在日常编程中，可以根据情况选用更有效率的标准库算法，在使用各种容器的时候，知道其底层模型是什么、怎么实现的、用起来也更加自如了。</p>
+<ul>
+<li>《深入理解计算机系统》 又名《CSAPP》<br><img src="http://7vzmyh.com1.z0.glb.clouddn.com/blog-cover_csapp.jpg" alt=""></li>
+</ul>
+<p>之前在知乎上看到很多大牛推荐这本书，比如<a href="http://blog.zhaojie.me/" target="_blank" rel="external">老赵</a>在<a href="http://blog.zhaojie.me/2009/12/valuable-posts-index.html#book-recommendation" target="_blank" rel="external">老赵书托系列</a>中就推荐了这本书，所以本着学习瞻仰的目的就买来了这本书学习了，啊哈哈哈。</p>
+<p>首先第一章计算机漫游总体介绍了计算机的从硬件到软件的基本组成和架构，第一次让我的脑海里对计算机的整体模型有了一个基本的认识。后面第二章紧接着介绍了计算机数据的二进制表示，虽然在学校的计算机组成原理这门课上学习了一点这些东西，那时候上课也没怎么认真听（现在想想估计光想着哪个妹子和怎么玩wow去了，orz），比如数据的上溢下溢，数据截断等等都是非常有用的东西。</p>
+<p>第三章作者用短短100页左右的时间将基本的ia32和x86-64汇编介绍了一遍，读完之后不说能写多好的汇编程序，起码能看懂不少编译器编译的汇编代码，这不仅debug的时候是很有用的，也对理解一些编程语言的机制比较有用，比如通过了解汇编就纠正了之前学c++时候的一个错误的观点，以为pass by reference一定比pass bay value有效，其实当pass value时候数据位的大小没有超过寄存器的一次读取数据的位数上限的话，pass by value实际上会通过pass by register，这样就更加有效率了。同时也知道了临时变量大多时候是存放在寄存器中，对临时变量的理解也更深刻了一些。</p>
+<p>第四章依次介绍了处理器的体系结构，包括简单的指令集、流水线结构、分支预测、转发机制等等。第五章介绍了一下程序优化的技巧，例如循环展开、积累变量、减少存储器引用、等技巧都是非常有用的，虽然现代编译器的优化能力非常强大，但是在必要的时候我也是可以通过这些手段去尝试着测试、优化、提高效率的。第六章介绍了存储器的结构、数据存储加载的基本方式以及缓存命中/未命中、数据局部性对程序性能的影响等等。虽然这些底层的东西可能对我们上层的程序编写来说，表面上没有关联，但我个人认为知道一些基本的底层知识能更好的写出对底层机制更亲和的代码。</p>
+<p>后面还介绍了异常控制流引申出了操作系统内核和用户态的切换，进程，线程，网络编程，io等许多东西，这里就不再赘述了。一共花了2个月的时间来阅读这本书、并动手做了每节的课后习题，但是每章的家庭作业并没有做，准备读第二遍的时候把它们做了。</p>
+<p>这本书非常好，也不枉许多大牛的推荐，由于书中介绍了知识概念很多，时间一久细节的东西比较容易忘记，有时候需要经常翻出来查找某些概念和知识。</p>
+<ul>
+<li>《深度探索c++对象模型》<br><img src="http://7vzmyh.com1.z0.glb.clouddn.com/blog-cover_inside_the_cxx_object_model.jpg" alt=""></li>
+</ul>
+<p>由于读完了CSAPP后对底层比较感兴趣，就搞到了这本书想了解一些c++底层的实现机制，以及编译器在背后做了哪些事情。这本书也花了一个多月的时间来阅读，里面讲解了很多有趣的东西，比如在c++primer中说的当我们没有为一个类定义构造函数的时候，编译器会自动合成一个默认构造函数，但是读了这本书后才明白，其实编译器这个坏家伙在背后并不一定会合成默认构造函数，例如当这个类的数据成员是内置类型的时候，编译器就神马都不做。c++标准中把这种构造函数叫做trivial构造函数、对于trivial默认构造函数编译器是不会合成的，编译器只会合成non-trivial构造函数。再比如多态、虚函数的实现机制、运行时类型识别的实现机制等等。里面很有很多这样有意思的东西。</p>
+<p>另外也花了不少业余时间也研究了多线程c++开源网络库muduo的源码、学习陈硕老师的网络编程思想以及代码风格等等。</p>
+<p>2015年的展望。希望2015年在技术上有所积累、提升一个档次，主要有三个方面：一方面计划在15年抽空学一门函数式编程语言，比如lisp或者haskell，了解一下另一种范式的语言，开开眼界；另一方面也想系统的学习一下python，了解这这一门动态语言的设计思想，因为目前只是在工作中偶尔用python写写工具脚本，谈不上熟悉，总的来说我比较喜欢c++，但是也想多了解了解不同的语言，熟悉多种范式和内在的语言设计思想；最后，希望在网络编程、多线程方面的技巧、思想有所提升，操作系统、协议栈上的机制有所了解和理解。</p>
+<p>（完）</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2014/12/30/a-implemention-for-circular-queue/" rel="next" title="循环队列的一种实现模型">
+                <i class="fa fa-chevron-left"></i> 循环队列的一种实现模型
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2015/01/21/trick-in-conditon-variable/" rel="prev" title="条件变量的陷阱与思考">
+                条件变量的陷阱与思考 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="disqus_thread">
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="Li Yuan" />
+          <p class="site-author-name" itemprop="name">Li Yuan</p>
+          <p class="site-description motion-element" itemprop="description">种一棵树最好的时间是十年前，其次是现在</p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">29</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/categories">
+                <span class="site-state-item-count">8</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="mailto:liyuan989@gmail.com" target="_blank">
+                  
+                    <i class="fa fa-envelope"></i>
+                  
+                  Email
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://cn.linkedin.com/in/liyuan989" target="_blank">
+                  
+                    <i class="fa fa-linkedin"></i>
+                  
+                  LinkedIn
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liyuan989" target="_blank">
+                  
+                    <i class="fa fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/origin-989" target="_blank">
+                  
+                    <i class="fa fa-globe"></i>
+                  
+                  知乎
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/liyuan989" target="_blank">
+                  
+                    <i class="fa fa-weibo"></i>
+                  
+                  微博
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+          <div class="cc-license motion-element" itemprop="license">
+            <a href="http://creativecommons.org/licenses/by/4.0" class="cc-opacity" target="_blank">
+              <img src="/images/cc-by.svg" alt="Creative Commons" />
+            </a>
+          </div>
+        
+
+        
+        <div class="links-of-blogroll motion-element">
+          
+        </div>
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc-indicator-top post-toc-indicator">
+            <i class="fa fa-angle-double-up"></i>
+          </div>
+          <div class="post-toc">
+            
+              
+            
+            
+              <p class="post-toc-empty">此文章未包含目录</p>
+            
+          </div>
+          <div class="post-toc-indicator-bottom post-toc-indicator">
+            <i class="fa fa-angle-double-down"></i>
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy;
+   2014 - 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Li Yuan</span>
+</div>
+<!--
+<div class="powered-by">
+  由 <a class="theme-link" href="http://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+-->
+
+
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+
+  
+
+
+
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js"></script>
+
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js"></script>
+
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=0.5.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=0.5.0"></script>
+
+
+
+  
+  
+
+  
+  
+<script type="text/javascript" src="/js/src/scrollspy.js?v=0.5.0"></script>
+
+<script type="text/javascript" id="sidebar.toc.highlight">
+  $(document).ready(function () {
+    var tocSelector = '.post-toc';
+    var $tocSelector = $(tocSelector);
+    var activeCurrentSelector = '.active-current';
+
+    $tocSelector
+      .on('activate.bs.scrollspy', function () {
+        var $currentActiveElement = $(tocSelector + ' .active').last();
+
+        removeCurrentActiveClass();
+        $currentActiveElement.addClass('active-current');
+
+        $tocSelector[0].scrollTop = $currentActiveElement.position().top;
+      })
+      .on('clear.bs.scrollspy', function () {
+        removeCurrentActiveClass();
+      });
+
+    function removeCurrentActiveClass () {
+      $(tocSelector + ' ' + activeCurrentSelector)
+        .removeClass(activeCurrentSelector.substring(1));
+    }
+
+    function processTOC () {
+      getTOCMaxHeight();
+      toggleTOCOverflowIndicators();
+    }
+
+    function getTOCMaxHeight () {
+      var height = $('.sidebar').height() -
+                   $tocSelector.position().top -
+                   $('.post-toc-indicator-bottom').height();
+
+      $tocSelector.css('height', height);
+
+      return height;
+    }
+
+    function toggleTOCOverflowIndicators () {
+      tocOverflowIndicator(
+        '.post-toc-indicator-top',
+        $tocSelector.scrollTop() > 0 ? 'show' : 'hide'
+      );
+
+      tocOverflowIndicator(
+        '.post-toc-indicator-bottom',
+        $tocSelector.scrollTop() >= $tocSelector.find('ol').height() - $tocSelector.height() ? 'hide' : 'show'
+      )
+    }
+
+    $(document).on('sidebar.motion.complete', function () {
+      processTOC();
+    });
+
+    $('body').scrollspy({ target: tocSelector });
+    $(window).on('resize', function () {
+      if ( $('.sidebar').hasClass('sidebar-active') ) {
+        processTOC();
+      }
+    });
+
+    onScroll($tocSelector);
+
+    function onScroll (element) {
+      element.on('mousewheel DOMMouseScroll', function (event) {
+          var oe = event.originalEvent;
+          var delta = oe.wheelDelta || -oe.detail;
+
+          this.scrollTop += ( delta < 0 ? 1 : -1 ) * 30;
+          event.preventDefault();
+
+          toggleTOCOverflowIndicators();
+      });
+    }
+
+    function tocOverflowIndicator (indicator, action) {
+      var $indicator = $(indicator);
+      var opacity = action === 'show' ? 1 : 0;
+      $indicator.velocity ?
+        $indicator.velocity('stop').velocity({
+          opacity: opacity
+        }, { duration: 100 }) :
+        $indicator.stop().animate({
+          opacity: opacity
+        }, 100);
+    }
+
+  });
+</script>
+
+<script type="text/javascript" id="sidebar.nav">
+  $(document).ready(function () {
+    var html = $('html');
+    var TAB_ANIMATE_DURATION = 200;
+    var hasVelocity = $.isFunction(html.velocity);
+
+    $('.sidebar-nav li').on('click', function () {
+      var item = $(this);
+      var activeTabClassName = 'sidebar-nav-active';
+      var activePanelClassName = 'sidebar-panel-active';
+      if (item.hasClass(activeTabClassName)) {
+        return;
+      }
+
+      var currentTarget = $('.' + activePanelClassName);
+      var target = $('.' + item.data('target'));
+
+      hasVelocity ?
+        currentTarget.velocity('transition.slideUpOut', TAB_ANIMATE_DURATION, function () {
+          target
+            .velocity('stop')
+            .velocity('transition.slideDownIn', TAB_ANIMATE_DURATION)
+            .addClass(activePanelClassName);
+        }) :
+        currentTarget.animate({ opacity: 0 }, TAB_ANIMATE_DURATION, function () {
+          currentTarget.hide();
+          target
+            .stop()
+            .css({'opacity': 0, 'display': 'block'})
+            .animate({ opacity: 1 }, TAB_ANIMATE_DURATION, function () {
+              currentTarget.removeClass(activePanelClassName);
+              target.addClass(activePanelClassName);
+            });
+        });
+
+      item.siblings().removeClass(activeTabClassName);
+      item.addClass(activeTabClassName);
+    });
+
+    $('.post-toc a').on('click', function (e) {
+      e.preventDefault();
+      var targetSelector = NexT.utils.escapeSelector(this.getAttribute('href'));
+      var offset = $(targetSelector).offset().top;
+      hasVelocity ?
+        html.velocity('stop').velocity('scroll', {
+          offset: offset  + 'px',
+          mobileHA: false
+        }) :
+        $('html, body').stop().animate({
+          scrollTop: offset
+        }, 500);
+    });
+
+    // Expand sidebar on post detail page by default, when post has a toc.
+    NexT.motion.middleWares.sidebar = function () {
+      var $tocContent = $('.post-toc-content');
+
+      if (CONFIG.sidebar.display === 'post' || CONFIG.sidebar.display === 'always') {
+        if ($tocContent.length > 0 && $tocContent.html().trim().length > 0) {
+          NexT.utils.displaySidebar();
+        }
+      }
+    };
+  });
+</script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=0.5.0"></script>
+
+
+
+  
+
+
+
+  
+
+    <script type="text/javascript">
+      var disqus_shortname = 'originlee';
+      var disqus_identifier = '2015/01/09/year-end-summary-of-2014/';
+      var disqus_title = '2014年终总结';
+      var disqus_url = 'http://originlee.com/2015/01/09/year-end-summary-of-2014/';
+
+      function run_disqus_script(disqus_script){
+        var dsq = document.createElement('script');
+        dsq.type = 'text/javascript';
+        dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      }
+
+      run_disqus_script('count.js');
+      
+        run_disqus_script('embed.js');
+      
+    </script>
+  
+
+
+
+  
+  
+  
+
+  
+
+  
+
+</body>
+</html>

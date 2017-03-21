@@ -1,0 +1,832 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css"/>
+
+
+
+
+  <link href="//fonts.googleapis.com/css?family=Lato:300,400,700,400italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=0.5.0" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=0.5.0" />
+
+
+
+
+
+
+<meta name="description" content="Google Protocol Buffer（简称protobuf）是Google内部混合语言数据标准，protobuf是一种紧凑的可扩展的二进制消息格式，适合做网络数据传输、数据存储的消息格式。
+protobuf作为网络传输的消息格式，有两个问题需要解决：
+
+消息长度。protobuf打包的数据没有自带长度信息，需要应用程序自己在发送和接收消息的时候做切分。
+消息类型。protobuf打包的数据">
+<meta property="og:type" content="article">
+<meta property="og:title" content="解析Google Protocol Buffer消息类型的自动反射原理">
+<meta property="og:url" content="http://originlee.com/2015/03/14/analysis-google-protobuf-reflection/index.html">
+<meta property="og:site_name" content="Less is more">
+<meta property="og:description" content="Google Protocol Buffer（简称protobuf）是Google内部混合语言数据标准，protobuf是一种紧凑的可扩展的二进制消息格式，适合做网络数据传输、数据存储的消息格式。
+protobuf作为网络传输的消息格式，有两个问题需要解决：
+
+消息长度。protobuf打包的数据没有自带长度信息，需要应用程序自己在发送和接收消息的时候做切分。
+消息类型。protobuf打包的数据">
+<meta property="og:image" content="http://7vzmyh.com1.z0.glb.clouddn.com/blog-analysis_google_protobuf_reflection.png">
+<meta property="og:updated_time" content="2016-06-19T17:21:44.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="解析Google Protocol Buffer消息类型的自动反射原理">
+<meta name="twitter:description" content="Google Protocol Buffer（简称protobuf）是Google内部混合语言数据标准，protobuf是一种紧凑的可扩展的二进制消息格式，适合做网络数据传输、数据存储的消息格式。
+protobuf作为网络传输的消息格式，有两个问题需要解决：
+
+消息长度。protobuf打包的数据没有自带长度信息，需要应用程序自己在发送和接收消息的时候做切分。
+消息类型。protobuf打包的数据">
+<meta name="twitter:image" content="http://7vzmyh.com1.z0.glb.clouddn.com/blog-analysis_google_protobuf_reflection.png">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+  <title> 解析Google Protocol Buffer消息类型的自动反射原理 - Less is more </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <!--
+      <span class="logo-line-before"><i></i></span>
+      -->
+      <span class="site-title">Less is more</span>
+      <!--
+      <span class="logo-line-after"><i></i></span>
+      -->
+    </a>
+  </div>
+  <p class="site-subtitle"></p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-home fa-fw"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-th fa-fw"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-archive fa-fw"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-user fa-fw"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                解析Google Protocol Buffer消息类型的自动反射原理
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2015-03-14T21:46:10+08:00" content="2015-03-14">
+              2015-03-14
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/网络编程/" itemprop="url" rel="index">
+                    <span itemprop="name">网络编程</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/2015/03/14/analysis-google-protobuf-reflection/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2015/03/14/analysis-google-protobuf-reflection/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>Google Protocol Buffer（简称protobuf）是Google内部混合语言数据标准，protobuf是一种紧凑的可扩展的二进制消息格式，适合做网络数据传输、数据存储的消息格式。</p>
+<p>protobuf作为网络传输的消息格式，有两个问题需要解决：</p>
+<ul>
+<li>消息长度。protobuf打包的数据没有自带长度信息，需要应用程序自己在发送和接收消息的时候做切分。</li>
+<li>消息类型。protobuf打包的数据没有自带消息类型，需要由发送方把类型信息传给接收方，接收方再根据收到的消息类型创建具体的Message对象。<br>第一个问题很好解决，可以在protobuf消息的前面附加一个固定长度的HeaderLen即可。</li>
+</ul>
+<p>第二个问题可能很多人会想到在HeaderLen和protobuf消息之间再加上一个消息类型数据段，由接收方根据不同的类型创建相应的Message对象。但其实protobuf已经自带了消息类型反射的功能。</p>
+<h2 id="自动反射"><a href="#自动反射" class="headerlink" title="自动反射"></a>自动反射</h2><p>Google Protocol Buffer具有reflection的功能，可以根据type name创建相应的类型的Message对象。（下图引用自<a href="http://blog.csdn.net/solstice/article/details/6300108" target="_blank" rel="external">陈硕的blog</a>）</p>
+<p><a href="http://7vzmyh.com1.z0.glb.clouddn.com/blog-analysis_google_protobuf_reflection.png" target="_blank" rel="external"><img src="http://7vzmyh.com1.z0.glb.clouddn.com/blog-analysis_google_protobuf_reflection.png" alt=""></a></p>
+<p>protobuf自动反射功能的关键所在就是Descriptor了，每个Message对象对应一个相应Descriptor。尽管创建Mesasge对象的过程中没有直接调用Descriptor，但是它却在其中起到了关键桥梁的作用。<a id="more"></a></p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;google/protobuf/descriptor.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;google/protobuf/message.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;string&gt;</span></span></span><br><span class="line"></span><br><span class="line">google::protobuf::<span class="function">Message* <span class="title">createMessage</span><span class="params">(<span class="keyword">const</span> <span class="built_in">std</span>::<span class="built_in">string</span>&amp; type_name)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    google::protobuf::Message* message = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="keyword">const</span> google::protobuf::Descriptor* descriptor =</span><br><span class="line">        google::protobuf::DescriptorPool::generated_pool()-&gt;FindMessageTypeByName(type_name);</span><br><span class="line">    <span class="keyword">if</span> (descriptor)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">const</span> google::protobuf::Message* prototype =</span><br><span class="line">            google::protobuf::MessageFactory::generated_factory()-&gt;GetPrototype(descriptor);</span><br><span class="line">        <span class="keyword">if</span> (prototype)</span><br><span class="line">        &#123;</span><br><span class="line">            message = prototype-&gt;New();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> message;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这样使用type_name传参调用DescriptorPool的FindMessageTypeByName拿到一个const类型的Descriptor，然后再通过Descriptor的GetPrototype获得const类型的Message，最后经由const Message的New即可得到一个可自由读写的Message对象。但是需要注意的是这个对象是动态创建的，调用者在使用完毕后必须动态释放掉它，所以推荐使用shared_ptr管理该对象。</p>
+<h2 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h2><p>知道了如何使用protobuf进行消息类型的自动反射后，下面就来讲讲它是如何实现的。</p>
+<p>首先我们在源码中找DescriptorPool::FindMessageTypeByName的实现：<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="keyword">const</span> Descriptor* DescriptorPool::FindMessageTypeByName(</span><br><span class="line">    <span class="keyword">const</span> <span class="built_in">string</span>&amp; name) <span class="keyword">const</span> &#123;</span><br><span class="line">  Symbol result = tables_-&gt;FindByNameHelper(<span class="keyword">this</span>, name);</span><br><span class="line">  <span class="keyword">return</span> (result.type == Symbol::MESSAGE) ? result.descriptor : <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>发现其中调用了tables<em>的FindByNameHelper函数，关于table</em>可以在DescriptorPool定义中找到</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="comment">// This class contains a lot of hash maps with complicated types that</span></span><br><span class="line"><span class="comment">// we'd like to keep out of the header.</span></span><br><span class="line"><span class="keyword">class</span> Tables;</span><br><span class="line">scoped_ptr&lt;Tables&gt; tables_;</span><br></pre></td></tr></table></figure>
+<p>table_是一个数据表项的集合（在目前手上的protobuf 2.6版本中是std::map和std::set的集合，其中的HashMap也是由std::map和std::set实现的），这样基本就可以推断出是在这个数据表项集合中通过type name查找得到相应类型的Descriptor。</p>
+<p>这个时候就有个疑问了，这个数据表项集合中的内容是什么时候生成的？</p>
+<p>先来看一个简单的protobuf文件，rpc.proto<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">package blink;</span><br><span class="line"></span><br><span class="line">enum MessageType</span><br><span class="line">&#123;</span><br><span class="line">    REQUEST = 1;</span><br><span class="line">    RESPONSE = 2;</span><br><span class="line">    ERROR = 3;  // not used</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">enum ErrorCode</span><br><span class="line">&#123;</span><br><span class="line">    NO_ERROR = 0;</span><br><span class="line">    WRONG_PROTO = 1;</span><br><span class="line">    NO_SERVICE = 2;</span><br><span class="line">    NO_METHOD = 3;</span><br><span class="line">    INVALID_REQUEST = 4;</span><br><span class="line">    INVALID_RESPONSE = 5;</span><br><span class="line">    TIMEOUT = 6;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">message RpcMessage</span><br><span class="line">&#123;</span><br><span class="line">    required MessageType type = 1;</span><br><span class="line">    required fixed64 id = 2;</span><br><span class="line"></span><br><span class="line">    optional string service = 3;</span><br><span class="line">    optional string method = 4;</span><br><span class="line">    optional bytes request = 5;</span><br><span class="line">    optional bytes response = 6;</span><br><span class="line">    optional ErrorCode error = 7;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>在使用protobuf编译器生成得到的rpc.pb.cc文件中可以看到这样一个函数<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">protobuf_AddDesc_rpc_2eproto</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">static</span> <span class="keyword">bool</span> already_here = <span class="literal">false</span>;</span><br><span class="line">  <span class="keyword">if</span> (already_here) <span class="keyword">return</span>;</span><br><span class="line">  already_here = <span class="literal">true</span>;</span><br><span class="line">  GOOGLE_PROTOBUF_VERIFY_VERSION;</span><br><span class="line"></span><br><span class="line">  ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(</span><br><span class="line">    <span class="string">"\n\trpc.proto\022\005blink\"\237\001\n\nRpcMessage\022 \n\004typ"</span></span><br><span class="line">    <span class="string">"e\030\001 \002(\0162\022.blink.MessageType\022\n\n\002id\030\002 \002(\006\022"</span></span><br><span class="line">    <span class="string">"\017\n\007service\030\003 \001(\t\022\016\n\006method\030\004 \001(\t\022\017\n\007requ"</span></span><br><span class="line">    <span class="string">"est\030\005 \001(\014\022\020\n\010response\030\006 \001"</span></span><br><span class="line">    <span class="string">"(\014\022\037\n\005error\030\007 \001"</span></span><br><span class="line">    <span class="string">"(\0162\020.blink.ErrorCode*3\n\013MessageType\022\013\n\007R"</span></span><br><span class="line">    <span class="string">"EQUEST\020\001\022\014\n\010RESPONSE\020\002\022\t\n\005ERROR\020\003*\201\001\n\tEr"</span></span><br><span class="line">    <span class="string">"rorCode\022\014\n\010NO_ERROR\020\000\022\017\n\013WRONG_PROTO\020\001\022\016"</span></span><br><span class="line">    <span class="string">"\n\nNO_SERVICE\020\002\022\r\n\tNO_METHOD\020\003\022\023\n\017INVALID"</span></span><br><span class="line">    <span class="string">"_REQUEST\020\004\022\024\n\020INVALID_RESPONSE\020\005\022\013\n\007TIME"</span></span><br><span class="line">    <span class="string">"OUT\020\006"</span>, <span class="number">365</span>);</span><br><span class="line">  ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(</span><br><span class="line">    <span class="string">"rpc.proto"</span>, &amp;protobuf_RegisterTypes);</span><br><span class="line">  RpcMessage::default_instance_ = <span class="keyword">new</span> RpcMessage();</span><br><span class="line">  RpcMessage::default_instance_-&gt;InitAsDefaultInstance();</span><br><span class="line">  ::google::protobuf::internal::OnShutdown(&amp;protobuf_ShutdownFile_rpc_2eproto);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>可以看到这个函数将上述.proto文件的元信息传入DescriptorPool::InternalAddGeneratedFile了。<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="keyword">void</span> DescriptorPool::InternalAddGeneratedFile(</span><br><span class="line">    <span class="keyword">const</span> <span class="keyword">void</span>* encoded_file_descriptor, <span class="keyword">int</span> size) &#123;</span><br><span class="line">  InitGeneratedPoolOnce();</span><br><span class="line">  GOOGLE_CHECK(generated_database_-&gt;Add(encoded_file_descriptor, size));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>进而又传入了generated<em>database</em>的Add函数中去了，在源码中找到generated<em>database</em>的定义<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line">EncodedDescriptorDatabase* generated_database_ = <span class="literal">NULL</span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">InitGeneratedPoolOnce</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  ::google::protobuf::GoogleOnceInit(&amp;generated_pool_init_, &amp;InitGeneratedPool);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">InitGeneratedPool</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  generated_database_ = <span class="keyword">new</span> EncodedDescriptorDatabase;</span><br><span class="line">  generated_pool_ = <span class="keyword">new</span> DescriptorPool(generated_database_);</span><br><span class="line"></span><br><span class="line">  internal::OnShutdown(&amp;DeleteGeneratedPool);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这样在之前InternalAddGeneratedFile中就初始化了generated<em>database</em>，接着找到generated<em>database</em>的类型EncodedDescriptorDatabase及其add的定义。<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> LIBPROTOBUF_EXPORT EncodedDescriptorDatabase : <span class="keyword">public</span> DescriptorDatabase &#123;</span><br><span class="line"> <span class="keyword">public</span>:</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">  <span class="function"><span class="keyword">bool</span> <span class="title">Add</span><span class="params">(<span class="keyword">const</span> <span class="keyword">void</span>* encoded_file_descriptor, <span class="keyword">int</span> size)</span></span>;</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line"> <span class="keyword">private</span>:</span><br><span class="line">  SimpleDescriptorDatabase::DescriptorIndex&lt;pair&lt;<span class="keyword">const</span> <span class="keyword">void</span>*, <span class="keyword">int</span>&gt; &gt; index_;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">bool</span> EncodedDescriptorDatabase::Add(</span><br><span class="line">    <span class="keyword">const</span> <span class="keyword">void</span>* encoded_file_descriptor, <span class="keyword">int</span> size) &#123;</span><br><span class="line">  FileDescriptorProto file;</span><br><span class="line">  <span class="keyword">if</span> (file.ParseFromArray(encoded_file_descriptor, size)) &#123;</span><br><span class="line">    <span class="keyword">return</span> index_.AddFile(file, make_pair(encoded_file_descriptor, size));</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    GOOGLE_LOG(ERROR) &lt;&lt; <span class="string">"Invalid file descriptor data passed to "</span></span><br><span class="line">                  <span class="string">"EncodedDescriptorDatabase::Add()."</span>;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>之前的.proto元数据传入了index<em>成员的AddFile函数中，而index</em>的类型DescriptorIndex<pair<const void*,="" int=""> &gt;的定义是:<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Value&gt;</span><br><span class="line">  <span class="keyword">class</span> DescriptorIndex &#123;</span><br><span class="line">   <span class="keyword">public</span>:</span><br><span class="line">    <span class="comment">// Helpers to recursively add particular descriptors and all their contents</span></span><br><span class="line">    <span class="comment">// to the index.</span></span><br><span class="line">    <span class="function"><span class="keyword">bool</span> <span class="title">AddFile</span><span class="params">(<span class="keyword">const</span> FileDescriptorProto&amp; file,</span><br><span class="line">                 Value value)</span></span>;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line"></span><br><span class="line">   <span class="keyword">private</span>:</span><br><span class="line">    <span class="built_in">map</span>&lt;<span class="built_in">string</span>, Value&gt; by_name_;</span><br><span class="line">    <span class="built_in">map</span>&lt;<span class="built_in">string</span>, Value&gt; by_symbol_;</span><br><span class="line">    <span class="built_in">map</span>&lt;pair&lt;<span class="built_in">string</span>, <span class="keyword">int</span>&gt;, Value&gt; by_extension_;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></pair<const></p>
+<p>果然，DescriptorIndex实际上是一些数据表项集合的包装，也就是说之前的.proto元数据存入了数据表项集合中。</p>
+<p>也就是说在protobuf生成的rpc.pb.cc文件中的protobuf_AddDesc_rpc_2eproto函数可以将.proto的元数据存入数据集合中。</p>
+<p>接着，我们可以在rpc.pb.cc中发现下面一段代码：<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="keyword">struct</span> StaticDescriptorInitializer_rpc_2eproto &#123;</span><br><span class="line">  StaticDescriptorInitializer_rpc_2eproto() &#123;</span><br><span class="line">    protobuf_AddDesc_rpc_2eproto();</span><br><span class="line">  &#125;</span><br><span class="line">&#125; static_descriptor_initializer_rpc_2eproto_;</span><br></pre></td></tr></table></figure></p>
+<p>在全局对象static_descriptor_initializer_rpc<em>2eproto</em>的构造函数中会调用protobuf_AddDesc_rpc_2eproto函数。我们知道C++全局对象的初始化是在进入main函数之前进行的，也就是说在程序一开始的时候就已经将.proto文件中的元信息导入到了数据表项集合中去了，当然前提是该程序必须链接了rpc.pb.cc。</p>
+<p>如此，protobuf的自动反射就可以正常的运转了。</p>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><ol>
+<li>Google Developers. <a href="https://developers.google.com/protocol-buffers/" target="_blank" rel="external">Protocol Buffers</a></li>
+<li>陈硕. <a href="http://blog.csdn.net/solstice/article/details/6300108" target="_blank" rel="external">一种自动反射消息类型的 Google Protobuf 网络传输方案, 2011</a></li>
+</ol>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2015/03/08/caesar-cipher/" rel="next" title="凯撒密码">
+                <i class="fa fa-chevron-left"></i> 凯撒密码
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2015/03/18/encoding-and-decoding-of-google-protocol-buffer/" rel="prev" title="Google Protocol Buffer的编解码原理">
+                Google Protocol Buffer的编解码原理 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="disqus_thread">
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="Li Yuan" />
+          <p class="site-author-name" itemprop="name">Li Yuan</p>
+          <p class="site-description motion-element" itemprop="description">种一棵树最好的时间是十年前，其次是现在</p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">29</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/categories">
+                <span class="site-state-item-count">8</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="mailto:liyuan989@gmail.com" target="_blank">
+                  
+                    <i class="fa fa-envelope"></i>
+                  
+                  Email
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://cn.linkedin.com/in/liyuan989" target="_blank">
+                  
+                    <i class="fa fa-linkedin"></i>
+                  
+                  LinkedIn
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liyuan989" target="_blank">
+                  
+                    <i class="fa fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/origin-989" target="_blank">
+                  
+                    <i class="fa fa-globe"></i>
+                  
+                  知乎
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/liyuan989" target="_blank">
+                  
+                    <i class="fa fa-weibo"></i>
+                  
+                  微博
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+          <div class="cc-license motion-element" itemprop="license">
+            <a href="http://creativecommons.org/licenses/by/4.0" class="cc-opacity" target="_blank">
+              <img src="/images/cc-by.svg" alt="Creative Commons" />
+            </a>
+          </div>
+        
+
+        
+        <div class="links-of-blogroll motion-element">
+          
+        </div>
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc-indicator-top post-toc-indicator">
+            <i class="fa fa-angle-double-up"></i>
+          </div>
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#自动反射"><span class="nav-number">1.</span> <span class="nav-text">自动反射</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#原理"><span class="nav-number">2.</span> <span class="nav-text">原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考文献"><span class="nav-number">3.</span> <span class="nav-text">参考文献</span></a></li></ol></div>
+            
+          </div>
+          <div class="post-toc-indicator-bottom post-toc-indicator">
+            <i class="fa fa-angle-double-down"></i>
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy;
+   2014 - 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Li Yuan</span>
+</div>
+<!--
+<div class="powered-by">
+  由 <a class="theme-link" href="http://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+-->
+
+
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+
+  
+
+
+
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js"></script>
+
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js"></script>
+
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=0.5.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=0.5.0"></script>
+
+
+
+  
+  
+
+  
+  
+<script type="text/javascript" src="/js/src/scrollspy.js?v=0.5.0"></script>
+
+<script type="text/javascript" id="sidebar.toc.highlight">
+  $(document).ready(function () {
+    var tocSelector = '.post-toc';
+    var $tocSelector = $(tocSelector);
+    var activeCurrentSelector = '.active-current';
+
+    $tocSelector
+      .on('activate.bs.scrollspy', function () {
+        var $currentActiveElement = $(tocSelector + ' .active').last();
+
+        removeCurrentActiveClass();
+        $currentActiveElement.addClass('active-current');
+
+        $tocSelector[0].scrollTop = $currentActiveElement.position().top;
+      })
+      .on('clear.bs.scrollspy', function () {
+        removeCurrentActiveClass();
+      });
+
+    function removeCurrentActiveClass () {
+      $(tocSelector + ' ' + activeCurrentSelector)
+        .removeClass(activeCurrentSelector.substring(1));
+    }
+
+    function processTOC () {
+      getTOCMaxHeight();
+      toggleTOCOverflowIndicators();
+    }
+
+    function getTOCMaxHeight () {
+      var height = $('.sidebar').height() -
+                   $tocSelector.position().top -
+                   $('.post-toc-indicator-bottom').height();
+
+      $tocSelector.css('height', height);
+
+      return height;
+    }
+
+    function toggleTOCOverflowIndicators () {
+      tocOverflowIndicator(
+        '.post-toc-indicator-top',
+        $tocSelector.scrollTop() > 0 ? 'show' : 'hide'
+      );
+
+      tocOverflowIndicator(
+        '.post-toc-indicator-bottom',
+        $tocSelector.scrollTop() >= $tocSelector.find('ol').height() - $tocSelector.height() ? 'hide' : 'show'
+      )
+    }
+
+    $(document).on('sidebar.motion.complete', function () {
+      processTOC();
+    });
+
+    $('body').scrollspy({ target: tocSelector });
+    $(window).on('resize', function () {
+      if ( $('.sidebar').hasClass('sidebar-active') ) {
+        processTOC();
+      }
+    });
+
+    onScroll($tocSelector);
+
+    function onScroll (element) {
+      element.on('mousewheel DOMMouseScroll', function (event) {
+          var oe = event.originalEvent;
+          var delta = oe.wheelDelta || -oe.detail;
+
+          this.scrollTop += ( delta < 0 ? 1 : -1 ) * 30;
+          event.preventDefault();
+
+          toggleTOCOverflowIndicators();
+      });
+    }
+
+    function tocOverflowIndicator (indicator, action) {
+      var $indicator = $(indicator);
+      var opacity = action === 'show' ? 1 : 0;
+      $indicator.velocity ?
+        $indicator.velocity('stop').velocity({
+          opacity: opacity
+        }, { duration: 100 }) :
+        $indicator.stop().animate({
+          opacity: opacity
+        }, 100);
+    }
+
+  });
+</script>
+
+<script type="text/javascript" id="sidebar.nav">
+  $(document).ready(function () {
+    var html = $('html');
+    var TAB_ANIMATE_DURATION = 200;
+    var hasVelocity = $.isFunction(html.velocity);
+
+    $('.sidebar-nav li').on('click', function () {
+      var item = $(this);
+      var activeTabClassName = 'sidebar-nav-active';
+      var activePanelClassName = 'sidebar-panel-active';
+      if (item.hasClass(activeTabClassName)) {
+        return;
+      }
+
+      var currentTarget = $('.' + activePanelClassName);
+      var target = $('.' + item.data('target'));
+
+      hasVelocity ?
+        currentTarget.velocity('transition.slideUpOut', TAB_ANIMATE_DURATION, function () {
+          target
+            .velocity('stop')
+            .velocity('transition.slideDownIn', TAB_ANIMATE_DURATION)
+            .addClass(activePanelClassName);
+        }) :
+        currentTarget.animate({ opacity: 0 }, TAB_ANIMATE_DURATION, function () {
+          currentTarget.hide();
+          target
+            .stop()
+            .css({'opacity': 0, 'display': 'block'})
+            .animate({ opacity: 1 }, TAB_ANIMATE_DURATION, function () {
+              currentTarget.removeClass(activePanelClassName);
+              target.addClass(activePanelClassName);
+            });
+        });
+
+      item.siblings().removeClass(activeTabClassName);
+      item.addClass(activeTabClassName);
+    });
+
+    $('.post-toc a').on('click', function (e) {
+      e.preventDefault();
+      var targetSelector = NexT.utils.escapeSelector(this.getAttribute('href'));
+      var offset = $(targetSelector).offset().top;
+      hasVelocity ?
+        html.velocity('stop').velocity('scroll', {
+          offset: offset  + 'px',
+          mobileHA: false
+        }) :
+        $('html, body').stop().animate({
+          scrollTop: offset
+        }, 500);
+    });
+
+    // Expand sidebar on post detail page by default, when post has a toc.
+    NexT.motion.middleWares.sidebar = function () {
+      var $tocContent = $('.post-toc-content');
+
+      if (CONFIG.sidebar.display === 'post' || CONFIG.sidebar.display === 'always') {
+        if ($tocContent.length > 0 && $tocContent.html().trim().length > 0) {
+          NexT.utils.displaySidebar();
+        }
+      }
+    };
+  });
+</script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=0.5.0"></script>
+
+
+
+  
+
+
+
+  
+
+    <script type="text/javascript">
+      var disqus_shortname = 'originlee';
+      var disqus_identifier = '2015/03/14/analysis-google-protobuf-reflection/';
+      var disqus_title = '解析Google Protocol Buffer消息类型的自动反射原理';
+      var disqus_url = 'http://originlee.com/2015/03/14/analysis-google-protobuf-reflection/';
+
+      function run_disqus_script(disqus_script){
+        var dsq = document.createElement('script');
+        dsq.type = 'text/javascript';
+        dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      }
+
+      run_disqus_script('count.js');
+      
+        run_disqus_script('embed.js');
+      
+    </script>
+  
+
+
+
+  
+  
+  
+
+  
+
+  
+
+</body>
+</html>

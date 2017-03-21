@@ -1,0 +1,1094 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css"/>
+
+
+
+
+  <link href="//fonts.googleapis.com/css?family=Lato:300,400,700,400italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=0.5.0" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=0.5.0" />
+
+
+
+
+
+
+<meta name="description" content="种一棵树最好的时间是十年前，其次是现在">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Less is more">
+<meta property="og:url" content="http://originlee.com/page/3/index.html">
+<meta property="og:site_name" content="Less is more">
+<meta property="og:description" content="种一棵树最好的时间是十年前，其次是现在">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Less is more">
+<meta name="twitter:description" content="种一棵树最好的时间是十年前，其次是现在">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+  <title> Less is more </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left 
+   page-home 
+ ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <!--
+      <span class="logo-line-before"><i></i></span>
+      -->
+      <span class="site-title">Less is more</span>
+      <!--
+      <span class="logo-line-after"><i></i></span>
+      -->
+    </a>
+  </div>
+  <p class="site-subtitle"></p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-home fa-fw"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-th fa-fw"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-archive fa-fw"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-user fa-fw"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+  <section id="posts" class="posts-expand">
+    
+      
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
+                <a class="post-title-link" href="/2015/04/05/runtime-memory-model-and-stack-frame/" itemprop="url">
+                  运行时内存布局与栈帧结构
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2015-04-05T23:56:34+08:00" content="2015-04-05">
+              2015-04-05
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/操作系统/" itemprop="url" rel="index">
+                    <span itemprop="name">操作系统</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/2015/04/05/runtime-memory-model-and-stack-frame/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2015/04/05/runtime-memory-model-and-stack-frame/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <p>我们知道程序在运行时的机器码（程序代码）、栈、堆都是在内存（存储器）上的一段空间，然后CPU依着一定的规则读取、翻译指令，「指挥」计算机如何存取内存上的数据。本文以Linux上的C程序为例，简单介绍一下这其中的运行机制。</p>
+<h2 id="内存布局"><a href="#内存布局" class="headerlink" title="内存布局"></a>内存布局</h2><p><img src="http://7vzmyh.com1.z0.glb.clouddn.com/blog-runtime_memory_model.png" alt=""></p>
+<p>每个Linux程序都有一个运行时的内存布局，主要结构如上图所示。在32位的Linux系统中，一个进程的虚拟地址空间最多为4GB，其中1GB（一般为地址空间的高位1G空间）是为内核保留的，剩下的3GB可为用户态所用。代码段总是从地址0x08048000初开始。数据段是在接下来的一个4KB对齐的地址处。运行时的堆在读/写段之后接下来第一个4KB对齐的地址处，并通过调用glibc库函数malloc往上增长。还有一段是为共享库保留的。用户栈总是从最大的合法用户地址开始，向下增长（向低地址方向增长）。从栈的上部开始的段是为内核的代码和数据保留的。</p>
+<ul>
+<li>.init：在该段定义了一个小函数_init，程序的初始化代码会调用它。</li>
+<li>.text：已编译程序的机器代码。</li>
+<li>.rodata：只读数据。比如字符串字面值、switch的跳转表、C++中的虚函数表都存放此段。</li>
+<li>.data：已初始化的全局变量。</li>
+<li>.bss：未初始化的全局变量。</li>
+<li>运行时堆：一般通过调用glibc库函数malloc往上增长。</li>
+<li>共享库映射区域：一般是glibc或者其他动态链接库的映射区域，如printf等等。</li>
+<li>用户栈：维持程序运行时的栈帧结构。</li>
+<li>内核段：为内核态的代码和数据所保留的地址空间。
+          <div class="post-more-link text-center">
+            <a class="btn" href="/2015/04/05/runtime-memory-model-and-stack-frame/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
+                <a class="post-title-link" href="/2015/03/27/difference-between-return-and-exit-in-cxx/" itemprop="url">
+                  C++中return与exit的区别
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2015-03-27T21:45:17+08:00" content="2015-03-27">
+              2015-03-27
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/C/" itemprop="url" rel="index">
+                    <span itemprop="name">C++</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/2015/03/27/difference-between-return-and-exit-in-cxx/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2015/03/27/difference-between-return-and-exit-in-cxx/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <p>对于return和exit，想必大家都不会陌生。</p>
+<p>很多人以为在main函数中return和调用exit差不多，反正都是程序结束了。但其实并不是这样的，这里面还有许多门道。</p>
+<h2 id="fork与vfork"><a href="#fork与vfork" class="headerlink" title="fork与vfork"></a>fork与vfork</h2><p>想一想下面两种情况会发生什么？</p>
+<ul>
+<li>分别在fork出的子进程中调用return和exit。</li>
+<li>分别在vfork出的子进程中调用return和exit。<br>在fork出的子进程的main函数中调用return和exit，都无异常情况发生，程序正常运行退出。在vfork出的子进程中调用exit，程序正常退出，而在vfork出的子进程的main函数中return，程序就直接掉了。</li>
+</ul>
+<p>先说说fork与vfork的区别：</p>
+<ul>
+<li>fork是创建一个子进程并得到与父进程相同的虚拟地址空间的一份独立的拷贝，也就是把父进程的内存数据都拷贝到子进程中了。（在实际中，一般采用的是写时复制COW）</li>
+<li>vfork是创建一个子进程并与父进程共享虚拟地址空间（父进程的），也就是和父进程共享所有内存数据。<br>那么为什么会有vfork这么一个玩意呢？据说一开始unix下只有fork，但是很多程序员喜欢在fork后立马使用exec执行一个外部程序，于是fork需要复制父进程的内存数据这一动作就变得毫无意义了（注：开始的时候fork并没有使用COW机制）。于是就弄出了与父进程共享数据的vfork，方便高效的使用exec执行外部程序。</li>
+</ul>
+<p>再回到上面的问题，为什么在vfork出的子进程的main函数里return程序就直接crash掉了？</p>
+          <div class="post-more-link text-center">
+            <a class="btn" href="/2015/03/27/difference-between-return-and-exit-in-cxx/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
+                <a class="post-title-link" href="/2015/03/18/encoding-and-decoding-of-google-protocol-buffer/" itemprop="url">
+                  Google Protocol Buffer的编解码原理
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2015-03-18T22:27:40+08:00" content="2015-03-18">
+              2015-03-18
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/网络编程/" itemprop="url" rel="index">
+                    <span itemprop="name">网络编程</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/2015/03/18/encoding-and-decoding-of-google-protocol-buffer/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2015/03/18/encoding-and-decoding-of-google-protocol-buffer/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <p>Google Protocol Buffer（简称protbuf）是一种紧凑的可扩展的二进制消息格式，并且如上一篇文章<a href="http://originlee.com/2015/03/14/analysis-google-protobuf-reflection/">《解析Google Protocol Buffer消息类型的自动反射原理》</a>中介绍的那样，它还自带消息类型反射的功能。从Google公布的<a href="https://code.google.com/p/thrift-protobuf-compare/wiki/Benchmarking">benchmark</a>来看，protobuf的效率还是很高的，这主要依赖于它的高效编解码方式。</p>
+<p>先来看一个简单的例子：<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">message Test1</span><br><span class="line">&#123;</span><br><span class="line">    required int32 id = 1;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>在一个应用中，我们将一个Test1的Message中的id设为150，将这个Message进行编码序列化以后以16进制输出到stdout中，会看到这样的3个字节：<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">08 96 01</span><br></pre></td></tr></table></figure></p>
+<p>也就是说只用了3个字节就表示了数据类型和数据的值。</p>
+<h2 id="Base-128-Varints"><a href="#Base-128-Varints" class="headerlink" title="Base 128 Varints"></a>Base 128 Varints</h2><p>Varints是protobuf的序列化整型数据的一种编码方式，它的优点是整型数据的值越小，编码后所用的字节数越小。</p>
+<p>经过Varints编码后的数据，它的每一个字节8bit的高位代表一个标记位。如果标记位是1，则代表下一个字节仍然是当前整型数据的组成；如果标记位是0，则代表下一个字节就是下一个整型数据了。</p>
+<p>先看最简单的数值1，一个字节足以表示它，所以它的标记位置0：<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">0000 0001</span><br></pre></td></tr></table></figure></p>
+<p>再看数值300，经过Varints编码后的序列：<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">1010 1100 0000 0010</span><br></pre></td></tr></table></figure></p>
+<p>从左到右，依次将每个字节的高位（标志位）去掉，若标志位为1，则下一个字节仍是当前数据的组成，若标志位为0，则下一个字节是下一个数据的组成。<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">1010 1100 0000 0010</span><br><span class="line">→ 010 1100  000 0010</span><br></pre></td></tr></table></figure></p>
+<p>因为protobuf是以little endian来编码字节序的，所以将两个字节交换、拼接，即可得到原始数据的二进制表示：<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">000 0010  010 1100</span><br><span class="line">→  000 0010 ++ 010 1100</span><br><span class="line">→  100101100</span><br><span class="line">→  256 + 32 + 8 + 4 = 300</span><br></pre></td></tr></table></figure></p>
+          <div class="post-more-link text-center">
+            <a class="btn" href="/2015/03/18/encoding-and-decoding-of-google-protocol-buffer/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
+                <a class="post-title-link" href="/2015/03/14/analysis-google-protobuf-reflection/" itemprop="url">
+                  解析Google Protocol Buffer消息类型的自动反射原理
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2015-03-14T21:46:10+08:00" content="2015-03-14">
+              2015-03-14
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/网络编程/" itemprop="url" rel="index">
+                    <span itemprop="name">网络编程</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/2015/03/14/analysis-google-protobuf-reflection/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2015/03/14/analysis-google-protobuf-reflection/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <p>Google Protocol Buffer（简称protobuf）是Google内部混合语言数据标准，protobuf是一种紧凑的可扩展的二进制消息格式，适合做网络数据传输、数据存储的消息格式。</p>
+<p>protobuf作为网络传输的消息格式，有两个问题需要解决：</p>
+<ul>
+<li>消息长度。protobuf打包的数据没有自带长度信息，需要应用程序自己在发送和接收消息的时候做切分。</li>
+<li>消息类型。protobuf打包的数据没有自带消息类型，需要由发送方把类型信息传给接收方，接收方再根据收到的消息类型创建具体的Message对象。<br>第一个问题很好解决，可以在protobuf消息的前面附加一个固定长度的HeaderLen即可。</li>
+</ul>
+<p>第二个问题可能很多人会想到在HeaderLen和protobuf消息之间再加上一个消息类型数据段，由接收方根据不同的类型创建相应的Message对象。但其实protobuf已经自带了消息类型反射的功能。</p>
+<h2 id="自动反射"><a href="#自动反射" class="headerlink" title="自动反射"></a>自动反射</h2><p>Google Protocol Buffer具有reflection的功能，可以根据type name创建相应的类型的Message对象。（下图引用自<a href="http://blog.csdn.net/solstice/article/details/6300108">陈硕的blog</a>）</p>
+<p><a href="http://7vzmyh.com1.z0.glb.clouddn.com/blog-analysis_google_protobuf_reflection.png"><img src="http://7vzmyh.com1.z0.glb.clouddn.com/blog-analysis_google_protobuf_reflection.png" alt=""></a></p>
+<p>protobuf自动反射功能的关键所在就是Descriptor了，每个Message对象对应一个相应Descriptor。尽管创建Mesasge对象的过程中没有直接调用Descriptor，但是它却在其中起到了关键桥梁的作用。
+          <div class="post-more-link text-center">
+            <a class="btn" href="/2015/03/14/analysis-google-protobuf-reflection/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
+                <a class="post-title-link" href="/2015/03/08/caesar-cipher/" itemprop="url">
+                  凯撒密码
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2015-03-08T00:30:45+08:00" content="2015-03-08">
+              2015-03-08
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/数据结构与算法/" itemprop="url" rel="index">
+                    <span itemprop="name">数据结构与算法</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/2015/03/08/caesar-cipher/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2015/03/08/caesar-cipher/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <p>在密码学中，「凯撒密码」是一种最简单且最广为人知的加密技术。它是一种替换加密技术，明文中所有字母都在字母表上向后或向前按照一个固定数目进行偏移后被替换成密文。例如当偏移量为3时，所有的A被替换为D，B被替换为E。这个加密方法是以凯撒的名字命名的，因为当年凯撒用此方法与将军们进行联络。</p>
+<h2 id="方法"><a href="#方法" class="headerlink" title="方法"></a>方法</h2><p>凯撒密码的替换方法是通过排列明文和密文字母表，密文字母通过将明文字母向左或向右移动一个固定数目的位置。例如当偏移量是左移3时（解密是密钥就是3）：<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">明文：ABCDEFGHIJK</span><br><span class="line">密文：DEFGHIJKLMN</span><br></pre></td></tr></table></figure></p>
+<p>使用时，加密者查找明文字母表中需要加密的消息中每一个字母所在的位置，并写下密文字母表中对应的字母。解密者则根据事先已知的密钥（偏移量和偏移方向）反过来操作，得到传递的实质信息。例如：<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">明文：HELLO WORLD</span><br><span class="line">密文：EBIIL TLOIA</span><br></pre></td></tr></table></figure></p>
+<p>凯撒密码的加密解密方法还可以用数学的求余来计算。用数字0-25代表26个英文字母，这样密钥偏移量的加密方法即为：<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">f(x) = (x + n) mod 26</span><br></pre></td></tr></table></figure></p>
+<p>解密方法为：<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">g(x) = (x - n) mod 26</span><br></pre></td></tr></table></figure></p>
+          <div class="post-more-link text-center">
+            <a class="btn" href="/2015/03/08/caesar-cipher/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+  </section>
+
+  
+  <nav class="pagination">
+    <a class="extend prev" rel="prev" href="/page/2/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><span class="page-number current">3</span><a class="page-number" href="/page/4/">4</a><span class="space">&hellip;</span><a class="page-number" href="/page/6/">6</a><a class="extend next" rel="next" href="/page/4/"><i class="fa fa-angle-right"></i></a>
+  </nav>
+
+
+
+          </div>
+          
+
+
+          
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+
+      <section class="site-overview sidebar-panel  sidebar-panel-active ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="Li Yuan" />
+          <p class="site-author-name" itemprop="name">Li Yuan</p>
+          <p class="site-description motion-element" itemprop="description">种一棵树最好的时间是十年前，其次是现在</p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">29</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/categories">
+                <span class="site-state-item-count">8</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="mailto:liyuan989@gmail.com" target="_blank">
+                  
+                    <i class="fa fa-envelope"></i>
+                  
+                  Email
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://cn.linkedin.com/in/liyuan989" target="_blank">
+                  
+                    <i class="fa fa-linkedin"></i>
+                  
+                  LinkedIn
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/liyuan989" target="_blank">
+                  
+                    <i class="fa fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/origin-989" target="_blank">
+                  
+                    <i class="fa fa-globe"></i>
+                  
+                  知乎
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/liyuan989" target="_blank">
+                  
+                    <i class="fa fa-weibo"></i>
+                  
+                  微博
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+          <div class="cc-license motion-element" itemprop="license">
+            <a href="http://creativecommons.org/licenses/by/4.0" class="cc-opacity" target="_blank">
+              <img src="/images/cc-by.svg" alt="Creative Commons" />
+            </a>
+          </div>
+        
+
+        
+        <div class="links-of-blogroll motion-element">
+          
+        </div>
+
+      </section>
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy;
+   2014 - 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Li Yuan</span>
+</div>
+<!--
+<div class="powered-by">
+  由 <a class="theme-link" href="http://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+-->
+
+
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+
+  
+
+
+
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js"></script>
+
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js"></script>
+
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=0.5.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=0.5.0"></script>
+
+
+
+  
+  
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=0.5.0"></script>
+
+
+
+  
+
+
+
+  
+
+    <script type="text/javascript">
+      var disqus_shortname = 'originlee';
+      var disqus_identifier = 'page/3/index.html';
+      var disqus_title = '';
+      var disqus_url = '';
+
+      function run_disqus_script(disqus_script){
+        var dsq = document.createElement('script');
+        dsq.type = 'text/javascript';
+        dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      }
+
+      run_disqus_script('count.js');
+      
+    </script>
+  
+
+
+
+  
+  
+  
+
+  
+
+  
+
+</body>
+</html>
