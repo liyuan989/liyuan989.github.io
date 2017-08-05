@@ -428,8 +428,9 @@
 <p>先说说fork与vfork的区别：</p>
 <ul>
 <li>fork是创建一个子进程并得到与父进程相同的虚拟地址空间的一份独立的拷贝，也就是把父进程的内存数据都拷贝到子进程中了。（在实际中，一般采用的是写时复制COW）</li>
-<li>vfork是创建一个子进程并与父进程共享虚拟地址空间（父进程的），也就是和父进程共享所有内存数据。<br>​<br>那么为什么会有vfork这么一个玩意呢？据说一开始unix下只有fork，但是很多程序员喜欢在fork后立马使用exec执行一个外部程序，于是fork需要复制父进程的内存数据这一动作就变得毫无意义了（注：开始的时候fork并没有使用COW机制）。于是就弄出了与父进程共享数据的vfork，方便高效的使用exec执行外部程序。</li>
+<li>vfork是创建一个子进程并与父进程共享虚拟地址空间（父进程的），也就是和父进程共享所有内存数据。</li>
 </ul>
+<p>那么为什么会有vfork这么一个玩意呢？据说一开始unix下只有fork，但是很多程序员喜欢在fork后立马使用exec执行一个外部程序，于是fork需要复制父进程的内存数据这一动作就变得毫无意义了（注：开始的时候fork并没有使用COW机制）。于是就弄出了与父进程共享数据的vfork，方便高效的使用exec执行外部程序。</p>
 <p>再回到上面的问题，为什么在vfork出的子进程的main函数里return程序就直接crash掉了？</p>
           <div class="post-more-link text-center">
             <a class="btn" href="/2015/03/27/difference-between-return-and-exit-in-cxx/#more" rel="contents">
