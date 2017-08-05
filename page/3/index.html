@@ -422,12 +422,13 @@
 <h2 id="fork与vfork"><a href="#fork与vfork" class="headerlink" title="fork与vfork"></a>fork与vfork</h2><p>想一想下面两种情况会发生什么？</p>
 <ul>
 <li>分别在fork出的子进程中调用return和exit。</li>
-<li>分别在vfork出的子进程中调用return和exit。<br>在fork出的子进程的main函数中调用return和exit，都无异常情况发生，程序正常运行退出。在vfork出的子进程中调用exit，程序正常退出，而在vfork出的子进程的main函数中return，程序就直接掉了。</li>
+<li>分别在vfork出的子进程中调用return和exit。</li>
 </ul>
+<p>在fork出的子进程的main函数中调用return和exit，都无异常情况发生，程序正常运行退出。在vfork出的子进程中调用exit，程序正常退出，而在vfork出的子进程的main函数中return，程序就直接挂掉了。</p>
 <p>先说说fork与vfork的区别：</p>
 <ul>
 <li>fork是创建一个子进程并得到与父进程相同的虚拟地址空间的一份独立的拷贝，也就是把父进程的内存数据都拷贝到子进程中了。（在实际中，一般采用的是写时复制COW）</li>
-<li>vfork是创建一个子进程并与父进程共享虚拟地址空间（父进程的），也就是和父进程共享所有内存数据。<br>那么为什么会有vfork这么一个玩意呢？据说一开始unix下只有fork，但是很多程序员喜欢在fork后立马使用exec执行一个外部程序，于是fork需要复制父进程的内存数据这一动作就变得毫无意义了（注：开始的时候fork并没有使用COW机制）。于是就弄出了与父进程共享数据的vfork，方便高效的使用exec执行外部程序。</li>
+<li>vfork是创建一个子进程并与父进程共享虚拟地址空间（父进程的），也就是和父进程共享所有内存数据。<br>  ​<br>那么为什么会有vfork这么一个玩意呢？据说一开始unix下只有fork，但是很多程序员喜欢在fork后立马使用exec执行一个外部程序，于是fork需要复制父进程的内存数据这一动作就变得毫无意义了（注：开始的时候fork并没有使用COW机制）。于是就弄出了与父进程共享数据的vfork，方便高效的使用exec执行外部程序。</li>
 </ul>
 <p>再回到上面的问题，为什么在vfork出的子进程的main函数里return程序就直接crash掉了？</p>
           <div class="post-more-link text-center">
