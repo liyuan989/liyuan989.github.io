@@ -289,7 +289,7 @@
       
         
           <p>我们知道程序在运行时的机器码（程序代码）、栈、堆都是在内存（存储器）上的一段空间，然后CPU依着一定的规则读取、翻译指令，「指挥」计算机如何存取内存上的数据。本文以Linux上的C程序为例，简单介绍一下这其中的运行机制。</p>
-<h2 id="内存布局"><a href="#内存布局" class="headerlink" title="内存布局"></a>内存布局</h2><p><img src="http://7vzmyh.com1.z0.glb.clouddn.com/blog-runtime_memory_model.png" alt=""></p>
+<h2 id="内存布局"><a href="#内存布局" class="headerlink" title="内存布局"></a>内存布局</h2><p><img src="/images/blog-runtime_memory_model.png" alt=""></p>
 <p>每个Linux程序都有一个运行时的内存布局，主要结构如上图所示。在32位的Linux系统中，一个进程的虚拟地址空间最多为4GB，其中1GB（一般为地址空间的高位1G空间）是为内核保留的，剩下的3GB可为用户态所用。代码段总是从地址0x08048000初开始。数据段是在接下来的一个4KB对齐的地址处。运行时的堆在读/写段之后接下来第一个4KB对齐的地址处，并通过调用glibc库函数malloc往上增长。还有一段是为共享库保留的。用户栈总是从最大的合法用户地址开始，向下增长（向低地址方向增长）。从栈的上部开始的段是为内核的代码和数据保留的。</p>
 <ul>
 <li>.init：在该段定义了一个小函数_init，程序的初始化代码会调用它。</li>
@@ -682,7 +682,7 @@
 </ul>
 <p>第二个问题可能很多人会想到在HeaderLen和protobuf消息之间再加上一个消息类型数据段，由接收方根据不同的类型创建相应的Message对象。但其实protobuf已经自带了消息类型反射的功能。</p>
 <h2 id="自动反射"><a href="#自动反射" class="headerlink" title="自动反射"></a>自动反射</h2><p>Google Protocol Buffer具有reflection的功能，可以根据type name创建相应的类型的Message对象。（下图引用自<a href="http://blog.csdn.net/solstice/article/details/6300108">陈硕的blog</a>）</p>
-<p><a href="http://7vzmyh.com1.z0.glb.clouddn.com/blog-analysis_google_protobuf_reflection.png"><img src="http://7vzmyh.com1.z0.glb.clouddn.com/blog-analysis_google_protobuf_reflection.png" alt=""></a></p>
+<p><a href="/images/blog-analysis_google_protobuf_reflection.png"><img src="/images/blog-analysis_google_protobuf_reflection.png" alt=""></a></p>
 <p>protobuf自动反射功能的关键所在就是Descriptor了，每个Message对象对应一个相应Descriptor。尽管创建Mesasge对象的过程中没有直接调用Descriptor，但是它却在其中起到了关键桥梁的作用。
           <div class="post-more-link text-center">
             <a class="btn" href="/2015/03/14/analysis-google-protobuf-reflection/#more" rel="contents">
@@ -980,7 +980,7 @@
   
   &copy;
    2014 - 
-  <span itemprop="copyrightYear">2018</span>
+  <span itemprop="copyrightYear">2019</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

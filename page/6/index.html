@@ -670,14 +670,14 @@
 <p>2.  n的父节点为黑色。这种情况不需要做修改。</p>
 <p>3.  n的父节点为红色（根据性质3，n的祖父节点必为黑色）。</p>
 <ul>
-<li><p>n的叔父节点为红色。这种情况，将n的父节点和叔父节点的颜色都改为黑色，若祖父节点是跟节点就将其改为黑色，否则将其颜色改为红色，并以祖父节点为插入的目标节点从情况1开始递归检测。<br><img src="http://7vzmyh.com1.z0.glb.clouddn.com/blog-Red-black_tree_insert_1.png" alt=""></p>
+<li><p>n的叔父节点为红色。这种情况，将n的父节点和叔父节点的颜色都改为黑色，若祖父节点是跟节点就将其改为黑色，否则将其颜色改为红色，并以祖父节点为插入的目标节点从情况1开始递归检测。<br><img src="/images/blog-Red-black_tree_insert_1.png" alt=""></p>
 </li>
-<li><p>n的叔父节点为黑色， 且n和n的父节点在同一边（即父节点为祖父的左儿子时，n也是父节点的左儿子。父节点为祖父节点的右儿子时。n也是父节点的右儿子）。以父节点为祖父节的左儿子为例，将父节点改为黑色，祖父节点改为红色，然后以祖父节点为基准右旋。（n为父节点右儿子时做相应的左旋。）<br><img src="http://7vzmyh.com1.z0.glb.clouddn.com/blog-Red-black_tree_insert_2.png" alt=""></p>
+<li><p>n的叔父节点为黑色， 且n和n的父节点在同一边（即父节点为祖父的左儿子时，n也是父节点的左儿子。父节点为祖父节点的右儿子时。n也是父节点的右儿子）。以父节点为祖父节的左儿子为例，将父节点改为黑色，祖父节点改为红色，然后以祖父节点为基准右旋。（n为父节点右儿子时做相应的左旋。）<br><img src="/images/blog-Red-black_tree_insert_2.png" alt=""></p>
 </li>
 <li><p>n的叔父节点为黑色，切n和n的父节点不在同一边（即父节点为祖父的左儿子时，n是父节点的右儿子。父节点为祖父节点的右儿子时。n也是父节点左右儿子）。以父节点为祖父节点的左儿子为例。以父节点为基准，进行左旋，然后以父节点为目标插入节点进入情况3的b情况进行操作。</p>
 </li>
 </ul>
-<p><img src="http://7vzmyh.com1.z0.glb.clouddn.com/blog-Red-black_tree_insert_3.png" alt=""><br>
+<p><img src="/images/blog-Red-black_tree_insert_3.png" alt=""><br>
           <div class="post-more-link text-center">
             <a class="btn" href="/2014/11/03/analysis-of-rbtree/#more" rel="contents">
               阅读全文 &raquo;
@@ -853,7 +853,7 @@
   
   &copy;
    2014 - 
-  <span itemprop="copyrightYear">2018</span>
+  <span itemprop="copyrightYear">2019</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

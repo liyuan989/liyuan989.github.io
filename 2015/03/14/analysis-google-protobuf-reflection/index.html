@@ -71,8 +71,8 @@ protobuf作为网络传输的消息格式，有两个问题需要解决：
 
 消息长度。protobuf打包的数据没有自带长度信息，需要应用程序自己在发送和接收消息的时候做切分。
 消息类型。protobuf打包的数据">
-<meta property="og:image" content="http://7vzmyh.com1.z0.glb.clouddn.com/blog-analysis_google_protobuf_reflection.png">
-<meta property="og:updated_time" content="2016-06-19T17:21:44.000Z">
+<meta property="og:image" content="http://originlee.com/images/blog-analysis_google_protobuf_reflection.png">
+<meta property="og:updated_time" content="2019-03-22T14:44:26.567Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="解析Google Protocol Buffer消息类型的自动反射原理">
 <meta name="twitter:description" content="Google Protocol Buffer（简称protobuf）是Google内部混合语言数据标准，protobuf是一种紧凑的可扩展的二进制消息格式，适合做网络数据传输、数据存储的消息格式。
@@ -80,7 +80,7 @@ protobuf作为网络传输的消息格式，有两个问题需要解决：
 
 消息长度。protobuf打包的数据没有自带长度信息，需要应用程序自己在发送和接收消息的时候做切分。
 消息类型。protobuf打包的数据">
-<meta name="twitter:image" content="http://7vzmyh.com1.z0.glb.clouddn.com/blog-analysis_google_protobuf_reflection.png">
+<meta name="twitter:image" content="http://originlee.com/images/blog-analysis_google_protobuf_reflection.png">
 
 
 
@@ -305,7 +305,7 @@ protobuf作为网络传输的消息格式，有两个问题需要解决：
 </ul>
 <p>第二个问题可能很多人会想到在HeaderLen和protobuf消息之间再加上一个消息类型数据段，由接收方根据不同的类型创建相应的Message对象。但其实protobuf已经自带了消息类型反射的功能。</p>
 <h2 id="自动反射"><a href="#自动反射" class="headerlink" title="自动反射"></a>自动反射</h2><p>Google Protocol Buffer具有reflection的功能，可以根据type name创建相应的类型的Message对象。（下图引用自<a href="http://blog.csdn.net/solstice/article/details/6300108" target="_blank" rel="external">陈硕的blog</a>）</p>
-<p><a href="http://7vzmyh.com1.z0.glb.clouddn.com/blog-analysis_google_protobuf_reflection.png" target="_blank" rel="external"><img src="http://7vzmyh.com1.z0.glb.clouddn.com/blog-analysis_google_protobuf_reflection.png" alt=""></a></p>
+<p><a href="/images/blog-analysis_google_protobuf_reflection.png"><img src="/images/blog-analysis_google_protobuf_reflection.png" alt=""></a></p>
 <p>protobuf自动反射功能的关键所在就是Descriptor了，每个Message对象对应一个相应Descriptor。尽管创建Mesasge对象的过程中没有直接调用Descriptor，但是它却在其中起到了关键桥梁的作用。<a id="more"></a></p>
 <figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;google/protobuf/descriptor.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;google/protobuf/message.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;string&gt;</span></span></span><br><span class="line"></span><br><span class="line">google::protobuf::<span class="function">Message* <span class="title">createMessage</span><span class="params">(<span class="keyword">const</span> <span class="built_in">std</span>::<span class="built_in">string</span>&amp; type_name)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    google::protobuf::Message* message = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="keyword">const</span> google::protobuf::Descriptor* descriptor =</span><br><span class="line">        google::protobuf::DescriptorPool::generated_pool()-&gt;FindMessageTypeByName(type_name);</span><br><span class="line">    <span class="keyword">if</span> (descriptor)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">const</span> google::protobuf::Message* prototype =</span><br><span class="line">            google::protobuf::MessageFactory::generated_factory()-&gt;GetPrototype(descriptor);</span><br><span class="line">        <span class="keyword">if</span> (prototype)</span><br><span class="line">        &#123;</span><br><span class="line">            message = prototype-&gt;New();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> message;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>这样使用type_name传参调用DescriptorPool的FindMessageTypeByName拿到一个const类型的Descriptor，然后再通过Descriptor的GetPrototype获得const类型的Message，最后经由const Message的New即可得到一个可自由读写的Message对象。但是需要注意的是这个对象是动态创建的，调用者在使用完毕后必须动态释放掉它，所以推荐使用shared_ptr管理该对象。</p>
@@ -553,7 +553,7 @@ protobuf作为网络传输的消息格式，有两个问题需要解决：
   
   &copy;
    2014 - 
-  <span itemprop="copyrightYear">2018</span>
+  <span itemprop="copyrightYear">2019</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

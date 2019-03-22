@@ -75,15 +75,15 @@
 每个红色节点的两个儿子一定是黑色。
 所有的叶子节点都是黑色。（注：这里的叶子节点并不是真正意义上的叶子节点，而是一种只有颜色属性但不存放数据的节点，而且其没有儿子节点）
 一个红黑树的中任取一个节点，从它所在位置到其他任何叶子节点的简单路径上所经过的黑色节点数相同。这5个性质决定了从根节点到叶子节">
-<meta property="og:image" content="http://7vzmyh.com1.z0.glb.clouddn.com/blog-Red-black_tree_insert_1.png">
-<meta property="og:image" content="http://7vzmyh.com1.z0.glb.clouddn.com/blog-Red-black_tree_insert_2.png">
-<meta property="og:image" content="http://7vzmyh.com1.z0.glb.clouddn.com/blog-Red-black_tree_insert_3.png">
-<meta property="og:image" content="http://7vzmyh.com1.z0.glb.clouddn.com/blog-Red-black_tree_delete_1.png">
-<meta property="og:image" content="http://7vzmyh.com1.z0.glb.clouddn.com/blog-Red-black_tree_delete_2.png">
-<meta property="og:image" content="http://7vzmyh.com1.z0.glb.clouddn.com/blog-Red-black_tree_delete_3.png">
-<meta property="og:image" content="http://7vzmyh.com1.z0.glb.clouddn.com/blog-Red-black_tree_delete_4.png">
-<meta property="og:image" content="http://7vzmyh.com1.z0.glb.clouddn.com/blog-Red-black_tree_delete_5.png">
-<meta property="og:updated_time" content="2016-06-19T17:21:44.000Z">
+<meta property="og:image" content="http://originlee.com/images/blog-Red-black_tree_insert_1.png">
+<meta property="og:image" content="http://originlee.com/images/blog-Red-black_tree_insert_2.png">
+<meta property="og:image" content="http://originlee.com/images/blog-Red-black_tree_insert_3.png">
+<meta property="og:image" content="http://originlee.com/images/blog-Red-black_tree_delete_1.png">
+<meta property="og:image" content="http://originlee.com/images/blog-Red-black_tree_delete_2.png">
+<meta property="og:image" content="http://originlee.com/images/blog-Red-black_tree_delete_3.png">
+<meta property="og:image" content="http://originlee.com/images/blog-Red-black_tree_delete_4.png">
+<meta property="og:image" content="http://originlee.com/images/blog-Red-black_tree_delete_5.png">
+<meta property="og:updated_time" content="2019-03-22T14:41:32.130Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="红黑树插入和删除的情况分析">
 <meta name="twitter:description" content="红黑树是特殊二叉查找树的一种，一棵红黑树有以下5种性质：
@@ -93,7 +93,7 @@
 每个红色节点的两个儿子一定是黑色。
 所有的叶子节点都是黑色。（注：这里的叶子节点并不是真正意义上的叶子节点，而是一种只有颜色属性但不存放数据的节点，而且其没有儿子节点）
 一个红黑树的中任取一个节点，从它所在位置到其他任何叶子节点的简单路径上所经过的黑色节点数相同。这5个性质决定了从根节点到叶子节">
-<meta name="twitter:image" content="http://7vzmyh.com1.z0.glb.clouddn.com/blog-Red-black_tree_insert_1.png">
+<meta name="twitter:image" content="http://originlee.com/images/blog-Red-black_tree_insert_1.png">
 
 
 
@@ -323,14 +323,14 @@
 <p>2.  n的父节点为黑色。这种情况不需要做修改。</p>
 <p>3.  n的父节点为红色（根据性质3，n的祖父节点必为黑色）。</p>
 <ul>
-<li><p>n的叔父节点为红色。这种情况，将n的父节点和叔父节点的颜色都改为黑色，若祖父节点是跟节点就将其改为黑色，否则将其颜色改为红色，并以祖父节点为插入的目标节点从情况1开始递归检测。<br><img src="http://7vzmyh.com1.z0.glb.clouddn.com/blog-Red-black_tree_insert_1.png" alt=""></p>
+<li><p>n的叔父节点为红色。这种情况，将n的父节点和叔父节点的颜色都改为黑色，若祖父节点是跟节点就将其改为黑色，否则将其颜色改为红色，并以祖父节点为插入的目标节点从情况1开始递归检测。<br><img src="/images/blog-Red-black_tree_insert_1.png" alt=""></p>
 </li>
-<li><p>n的叔父节点为黑色， 且n和n的父节点在同一边（即父节点为祖父的左儿子时，n也是父节点的左儿子。父节点为祖父节点的右儿子时。n也是父节点的右儿子）。以父节点为祖父节的左儿子为例，将父节点改为黑色，祖父节点改为红色，然后以祖父节点为基准右旋。（n为父节点右儿子时做相应的左旋。）<br><img src="http://7vzmyh.com1.z0.glb.clouddn.com/blog-Red-black_tree_insert_2.png" alt=""></p>
+<li><p>n的叔父节点为黑色， 且n和n的父节点在同一边（即父节点为祖父的左儿子时，n也是父节点的左儿子。父节点为祖父节点的右儿子时。n也是父节点的右儿子）。以父节点为祖父节的左儿子为例，将父节点改为黑色，祖父节点改为红色，然后以祖父节点为基准右旋。（n为父节点右儿子时做相应的左旋。）<br><img src="/images/blog-Red-black_tree_insert_2.png" alt=""></p>
 </li>
 <li><p>n的叔父节点为黑色，切n和n的父节点不在同一边（即父节点为祖父的左儿子时，n是父节点的右儿子。父节点为祖父节点的右儿子时。n也是父节点左右儿子）。以父节点为祖父节点的左儿子为例。以父节点为基准，进行左旋，然后以父节点为目标插入节点进入情况3的b情况进行操作。</p>
 </li>
 </ul>
-<p><img src="http://7vzmyh.com1.z0.glb.clouddn.com/blog-Red-black_tree_insert_3.png" alt=""><br><a id="more"></a></p>
+<p><img src="/images/blog-Red-black_tree_insert_3.png" alt=""><br><a id="more"></a></p>
 <h2 id="2-删除"><a href="#2-删除" class="headerlink" title="2. 删除"></a>2. 删除</h2><p>删除的节点有两个儿子时，可以转化为删除的节点只有一个儿子时的问题。对于二叉查找树，在删除带有两个非叶子儿子的节点的时候，我们找到要么在它的左子树中的最大元素、要么在它的右子树中的最小元素，并把它的值转移到要删除的节点中。我们接着删除我们从中复制出值的那个节点，它必定有少于两个非叶子的儿子。因为只是复制了一个值，不违反任何性质，这就把问题简化为如何删除最多有一个儿子的节点的问题。它不关心这个节点是最初要删除的节点还是我们从中复制出值的那个节点。</p>
 <p>那么所有情况都可以转化为删除只有一个儿子的节点的情况，我们约定这个要删除的节点为n（若n“没有”儿子节点，并用他的任意一个为叶子节点的儿子节点顶替即可）</p>
 <p>1.  n为红色节点时。直接删除n，用它的黑色儿子代替它的位置。</p>
@@ -339,23 +339,23 @@
 <ul>
 <li>n’的兄弟节点和兄弟节点的2个儿子都为黑色。交换兄弟节点和父节点的颜色即可。</li>
 </ul>
-<p><img src="http://7vzmyh.com1.z0.glb.clouddn.com/blog-Red-black_tree_delete_1.png" alt=""></p>
+<p><img src="/images/blog-Red-black_tree_delete_1.png" alt=""></p>
 <ul>
 <li>n‘的兄弟节点为黑色、且兄弟节点的红色儿子和兄弟节点在一边（即兄弟节点为左儿子时，红色儿子也为左儿子。兄弟节点为右儿子时，红色儿子也为右儿子）。我们以兄弟节点为右儿子为例。将祖父节点和兄弟节点的颜色互换，并将红色右儿子的颜色改为黑色，然后以祖父节点为基准左旋。（若兄弟节点为左儿子，则相应的右旋）</li>
 </ul>
-<p><img src="http://7vzmyh.com1.z0.glb.clouddn.com/blog-Red-black_tree_delete_2.png" alt=""></p>
+<p><img src="/images/blog-Red-black_tree_delete_2.png" alt=""></p>
 <ul>
 <li>n‘的兄弟节点为黑色、且兄弟节点的红儿子和兄弟节点不在一边（即兄弟节点为左儿子时，红色儿子也为右儿子。兄弟节点为右儿子时，红色儿子也为左儿子）。我们以兄弟结点为右儿子为例。将兄弟节点和它的红色儿子的颜色互换，然后以兄弟节点为基准右旋。此时对于n’来说就进入了上文b情况。（若兄弟节点为右儿子，则相应的左旋）</li>
 </ul>
-<p><img src="http://7vzmyh.com1.z0.glb.clouddn.com/blog-Red-black_tree_delete_3.png" alt=""></p>
+<p><img src="/images/blog-Red-black_tree_delete_3.png" alt=""></p>
 <ul>
 <li>n‘的兄弟节点为红色。以兄弟节点为右儿子为例，将父节点和兄弟节点的颜色互换，然后以父节点为基准左旋（若兄弟节点为左儿子则相应的右旋），此n’有一个黑色的兄弟节点，接下来n就可以进入a、b、c三种情况分别操作了。</li>
 </ul>
-<p><img src="http://7vzmyh.com1.z0.glb.clouddn.com/blog-Red-black_tree_delete_4.png" alt=""></p>
+<p><img src="/images/blog-Red-black_tree_delete_4.png" alt=""></p>
 <ul>
 <li>n‘的兄弟节为黑色，父节点也为黑色。此时将兄弟节点的颜色改为红色。然后以父节点为目标插入节点从头开始依次判断。</li>
 </ul>
-<p><img src="http://7vzmyh.com1.z0.glb.clouddn.com/blog-Red-black_tree_delete_5.png" alt=""></p>
+<p><img src="/images/blog-Red-black_tree_delete_5.png" alt=""></p>
 <h2 id="3-参考文献"><a href="#3-参考文献" class="headerlink" title="3. 参考文献"></a>3. 参考文献</h2><ol>
 <li>Wikipedia. <a href="http://en.wikipedia.org/wiki/red%e2%80%93black_tree" target="_blank" rel="external">Red-black tree</a><br>（完）</li>
 </ol>
@@ -578,7 +578,7 @@
   
   &copy;
    2014 - 
-  <span itemprop="copyrightYear">2018</span>
+  <span itemprop="copyrightYear">2019</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

@@ -67,15 +67,15 @@
 <meta property="og:description" content="我们知道程序在运行时的机器码（程序代码）、栈、堆都是在内存（存储器）上的一段空间，然后CPU依着一定的规则读取、翻译指令，「指挥」计算机如何存取内存上的数据。本文以Linux上的C程序为例，简单介绍一下这其中的运行机制。
 内存布局
 每个Linux程序都有一个运行时的内存布局，主要结构如上图所示。在32位的Linux系统中，一个进程的虚拟地址空间最多为4GB，其中1GB（一般为地址空间的高位1G空间">
-<meta property="og:image" content="http://7vzmyh.com1.z0.glb.clouddn.com/blog-runtime_memory_model.png">
-<meta property="og:image" content="http://7vzmyh.com1.z0.glb.clouddn.com/blog-stack_frame.png">
-<meta property="og:updated_time" content="2016-06-19T17:21:44.000Z">
+<meta property="og:image" content="http://originlee.com/images/blog-runtime_memory_model.png">
+<meta property="og:image" content="http://originlee.com/images/blog-stack_frame.png">
+<meta property="og:updated_time" content="2019-03-22T14:56:20.792Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="运行时内存布局与栈帧结构">
 <meta name="twitter:description" content="我们知道程序在运行时的机器码（程序代码）、栈、堆都是在内存（存储器）上的一段空间，然后CPU依着一定的规则读取、翻译指令，「指挥」计算机如何存取内存上的数据。本文以Linux上的C程序为例，简单介绍一下这其中的运行机制。
 内存布局
 每个Linux程序都有一个运行时的内存布局，主要结构如上图所示。在32位的Linux系统中，一个进程的虚拟地址空间最多为4GB，其中1GB（一般为地址空间的高位1G空间">
-<meta name="twitter:image" content="http://7vzmyh.com1.z0.glb.clouddn.com/blog-runtime_memory_model.png">
+<meta name="twitter:image" content="http://originlee.com/images/blog-runtime_memory_model.png">
 
 
 
@@ -293,7 +293,7 @@
 
       
         <p>我们知道程序在运行时的机器码（程序代码）、栈、堆都是在内存（存储器）上的一段空间，然后CPU依着一定的规则读取、翻译指令，「指挥」计算机如何存取内存上的数据。本文以Linux上的C程序为例，简单介绍一下这其中的运行机制。</p>
-<h2 id="内存布局"><a href="#内存布局" class="headerlink" title="内存布局"></a>内存布局</h2><p><img src="http://7vzmyh.com1.z0.glb.clouddn.com/blog-runtime_memory_model.png" alt=""></p>
+<h2 id="内存布局"><a href="#内存布局" class="headerlink" title="内存布局"></a>内存布局</h2><p><img src="/images/blog-runtime_memory_model.png" alt=""></p>
 <p>每个Linux程序都有一个运行时的内存布局，主要结构如上图所示。在32位的Linux系统中，一个进程的虚拟地址空间最多为4GB，其中1GB（一般为地址空间的高位1G空间）是为内核保留的，剩下的3GB可为用户态所用。代码段总是从地址0x08048000初开始。数据段是在接下来的一个4KB对齐的地址处。运行时的堆在读/写段之后接下来第一个4KB对齐的地址处，并通过调用glibc库函数malloc往上增长。还有一段是为共享库保留的。用户栈总是从最大的合法用户地址开始，向下增长（向低地址方向增长）。从栈的上部开始的段是为内核的代码和数据保留的。</p>
 <ul>
 <li>.init：在该段定义了一个小函数_init，程序的初始化代码会调用它。</li>
@@ -333,7 +333,7 @@
 <figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;unistd.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/mman.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span>* <span class="title">munmap</span><span class="params">(<span class="keyword">void</span>* start, <span class="keyword">size_t</span> length)</span></span></span><br></pre></td></tr></table></figure>
 <p>就像malloc与free一样，相对应的mmap映射的内存区域可以用munmap释放。需要注意的是munmap不会影响到被映射的对象，也就是说不会使映射区的内容写到磁盘（硬盘）文件上。</p>
 <h2 id="X86的栈帧结构"><a href="#X86的栈帧结构" class="headerlink" title="X86的栈帧结构"></a>X86的栈帧结构</h2><p>在上文的运行时内存布局中谈到了用户栈就是维持程序运行时的栈帧结构，在X86架构下，其栈帧结构大致如下图：</p>
-<p><img src="http://7vzmyh.com1.z0.glb.clouddn.com/blog-stack_frame.png" alt=""></p>
+<p><img src="/images/blog-stack_frame.png" alt=""></p>
 <p>IA32程序使用栈来支持过程调用。机器用栈来传递过程参数、存储返回信息、保存寄存器用于以后恢复，以及本地存储。为单个过程分配的那部分叫做栈帧。如上图所示，栈帧的最顶端以两个指针为分界线，寄存器%ebp为帧指针，寄存器%esp为栈指针。当程序执行时，栈指针可以移动，因此大多数信息的访问都是相对于栈指针的。</p>
 <p>假设过程P（调用者）调用过程Q（被调用者），Q的参数放在P的栈帧中。另外，当P调用Q时，P中的返回地址被压入栈中，形成P的栈帧末尾。返回地址就是当程序从Q返回时应该继续执行的地方。Q的栈帧从保存帧指针（%esp）开始，后面是保存的其他寄存器的值。</p>
 <p>过程Q也用栈来保存其他不能存放在寄存器中的局部变量，这样做的主要原因是：</p>
@@ -580,7 +580,7 @@
   
   &copy;
    2014 - 
-  <span itemprop="copyrightYear">2018</span>
+  <span itemprop="copyrightYear">2019</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

@@ -93,19 +93,19 @@
 编译后端，包括代码优化、代码生成
 
 流程：">
-<meta property="og:image" content="http://7vzmyh.com1.z0.glb.clouddn.com/compile_component.PNG">
-<meta property="og:image" content="http://7vzmyh.com1.z0.glb.clouddn.com/DFA.PNG">
-<meta property="og:image" content="http://7vzmyh.com1.z0.glb.clouddn.com/concatenation.PNG">
-<meta property="og:image" content="http://7vzmyh.com1.z0.glb.clouddn.com/select.PNG">
-<meta property="og:image" content="http://7vzmyh.com1.z0.glb.clouddn.com/repeat.PNG">
-<meta property="og:image" content="http://7vzmyh.com1.z0.glb.clouddn.com/ast.PNG">
-<meta property="og:image" content="http://7vzmyh.com1.z0.glb.clouddn.com/example_of_symbo_table.PNG">
-<meta property="og:image" content="http://7vzmyh.com1.z0.glb.clouddn.com/symbol_table.PNG">
-<meta property="og:image" content="http://7vzmyh.com1.z0.glb.clouddn.com/target_file.PNG">
-<meta property="og:image" content="http://7vzmyh.com1.z0.glb.clouddn.com/static_link.PNG">
-<meta property="og:image" content="http://7vzmyh.com1.z0.glb.clouddn.com/executable_target_file.PNG">
-<meta property="og:image" content="http://7vzmyh.com1.z0.glb.clouddn.com/dynamic_link.PNG">
-<meta property="og:updated_time" content="2016-06-19T17:21:44.000Z">
+<meta property="og:image" content="http://originlee.com/images/compile_component.PNG">
+<meta property="og:image" content="http://originlee.com/images/DFA.PNG">
+<meta property="og:image" content="http://originlee.com/images/concatenation.PNG">
+<meta property="og:image" content="http://originlee.com/images/select.PNG">
+<meta property="og:image" content="http://originlee.com/images/repeat.PNG">
+<meta property="og:image" content="http://originlee.com/images/ast.PNG">
+<meta property="og:image" content="http://originlee.com/images/example_of_symbo_table.PNG">
+<meta property="og:image" content="http://originlee.com/images/symbol_table.PNG">
+<meta property="og:image" content="http://originlee.com/images/target_file.PNG">
+<meta property="og:image" content="http://originlee.com/images/static_link.PNG">
+<meta property="og:image" content="http://originlee.com/images/executable_target_file.PNG">
+<meta property="og:image" content="http://originlee.com/images/dynamic_link.PNG">
+<meta property="og:updated_time" content="2019-03-22T14:50:50.447Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="编译与链接">
 <meta name="twitter:description" content="本文整理自之前我在公司内部培训上的演讲ppt
@@ -124,7 +124,7 @@
 编译后端，包括代码优化、代码生成
 
 流程：">
-<meta name="twitter:image" content="http://7vzmyh.com1.z0.glb.clouddn.com/compile_component.PNG">
+<meta name="twitter:image" content="http://originlee.com/images/compile_component.PNG">
 
 
 
@@ -358,7 +358,7 @@
 <li>编译后端，包括代码优化、代码生成</li>
 </ul>
 <p>流程：</p>
-<p><img src="http://7vzmyh.com1.z0.glb.clouddn.com/compile_component.PNG" alt=""></p>
+<p><img src="/images/compile_component.PNG" alt=""></p>
 <a id="more"></a>
 <h1 id="词法分析"><a href="#词法分析" class="headerlink" title="词法分析"></a>词法分析</h1><p>将输入的字符串流转换为特定的token</p>
 <p>识别字符组合的过程</p>
@@ -381,20 +381,20 @@
 <li>正则表达式引擎</li>
 </ul>
 <p>DFA:</p>
-<p><img src="http://7vzmyh.com1.z0.glb.clouddn.com/DFA.PNG" alt=""></p>
+<p><img src="/images/DFA.PNG" alt=""></p>
 <p>NFA:</p>
 <ul>
 <li>并置</li>
 </ul>
-<p><img src="http://7vzmyh.com1.z0.glb.clouddn.com/concatenation.PNG" alt=""></p>
+<p><img src="/images/concatenation.PNG" alt=""></p>
 <ul>
 <li>选择</li>
 </ul>
-<p><img src="http://7vzmyh.com1.z0.glb.clouddn.com/select.PNG" alt=""></p>
+<p><img src="/images/select.PNG" alt=""></p>
 <ul>
 <li>重复</li>
 </ul>
-<p><img src="http://7vzmyh.com1.z0.glb.clouddn.com/repeat.PNG" alt=""></p>
+<p><img src="/images/repeat.PNG" alt=""></p>
 <h1 id="语法分析"><a href="#语法分析" class="headerlink" title="语法分析"></a>语法分析</h1><p>将token流转换成语句，然后根据语句构造抽象语法树（AST）</p>
 <p>例如if (bool_expression) {statement }就是简单的if语句，构成它所需要的token有关键字if，符号(，表达式，符号)，符号{，语句statement，符号}。而这里表达式和语句又由token流组成，丢弃掉后续过程不关心的符号( ){}，然后再由这些token及相关信息构造抽象语法树</p>
 <h2 id="乔姆斯基谱系"><a href="#乔姆斯基谱系" class="headerlink" title="乔姆斯基谱系"></a>乔姆斯基谱系</h2><p>乔姆斯基谱系分为4层：</p>
@@ -468,7 +468,7 @@
 <p>下面是一段求n的阶乘的代码:</p>
 <figure class="highlight pascal"><table><tr><td class="code"><pre><span class="line"><span class="keyword">read</span> x; <span class="comment">&#123;input&#125;</span></span><br><span class="line"><span class="keyword">if</span> <span class="number">0</span> &lt; x <span class="keyword">then</span> <span class="comment">&#123;don't compute if x &lt;= 0&#125;</span></span><br><span class="line">    fact := <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">repeat</span></span><br><span class="line">        fact := fact * x;</span><br><span class="line">        x := x - <span class="number">1</span></span><br><span class="line">    <span class="keyword">until</span> x = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">write</span> fact <span class="comment">&#123;output factorial of x&#125;</span></span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></figure>
 <p>经过语法分析后生成的抽象语法树:</p>
-<p><img src="http://7vzmyh.com1.z0.glb.clouddn.com/ast.PNG" alt=""></p>
+<p><img src="/images/ast.PNG" alt=""></p>
 <h1 id="语义分析"><a href="#语义分析" class="headerlink" title="语义分析"></a>语义分析</h1><p>在进行下一步之前，需要对抽象语法树进行分析，如类型检查、类型推导</p>
 <p>在进行语义分析的时候，需要符号表来记录变量以及对应的类型，然后在遍历抽象语法树的时候来进行查询与处理</p>
 <p>语义分析的输入是抽象语法树，输出仍然是抽象语法树</p>
@@ -498,8 +498,8 @@
 <li>other(包括指向函数参数条目的指针，undef是否本模块定义等等)</li>
 </ul>
 <p>嵌套作用域问题可以用scope stack来解决：</p>
-<p><img src="http://7vzmyh.com1.z0.glb.clouddn.com/example_of_symbo_table.PNG" alt=""></p>
-<p><img src="http://7vzmyh.com1.z0.glb.clouddn.com/symbol_table.PNG" alt=""></p>
+<p><img src="/images/example_of_symbo_table.PNG" alt=""></p>
+<p><img src="/images/symbol_table.PNG" alt=""></p>
 <h1 id="代码优化"><a href="#代码优化" class="headerlink" title="代码优化"></a>代码优化</h1><p>优化来源:</p>
 <ul>
 <li>寄存器分配，同样的代码64位编译比32位快(通用目的寄存器由8个增加到16个，函数调用传参最多可由6个寄存器传参而不需要存放在栈上)</li>
@@ -579,7 +579,7 @@
 <li>只被本模块定义和引用的本地符号(static普通函数、static全局变量、匿名namespace中的符号都属于本地符号)</li>
 </ul>
 <p>ELF格式可重定位的目标文件的结构如下:</p>
-<p><img src="http://7vzmyh.com1.z0.glb.clouddn.com/target_file.PNG" alt=""></p>
+<p><img src="/images/target_file.PNG" alt=""></p>
 <h1 id="符号解析"><a href="#符号解析" class="headerlink" title="符号解析"></a>符号解析</h1><p>链接器按命令行上从左到右的顺序处理输入文件，在整个符号解析过程中，维持3个集合，可重定位的目标文件集合E，未解析定义的符号集合U，已定义的符号集合D，初始状态这三个集合都是空的</p>
 <ul>
 <li>每读入一个文件就更新这3个集合，并在D中寻找U中的符号，然后做相应的修改</li>
@@ -591,7 +591,7 @@
 <li>引用某个符号的目标文件或者库文件需要出现在定义改符号的目标文件或者库文件的前面</li>
 <li>如果几个库文件直接有互相引用，那么需按先引用再定义的顺序排序</li>
 </ul>
-<h1 id="静态链接"><a href="#静态链接" class="headerlink" title="静态链接"></a>静态链接</h1><p><img src="http://7vzmyh.com1.z0.glb.clouddn.com/static_link.PNG" alt=""></p>
+<h1 id="静态链接"><a href="#静态链接" class="headerlink" title="静态链接"></a>静态链接</h1><p><img src="/images/static_link.PNG" alt=""></p>
 <h2 id="重定位"><a href="#重定位" class="headerlink" title="重定位"></a>重定位</h2><p>重定位节和符号定义</p>
 <ul>
 <li>链接器将所有相同类型的节合并为同一类型的新的聚合节</li>
@@ -603,14 +603,14 @@
 </ul>
 <figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="keyword">struct</span> &#123;</span><br><span class="line">    <span class="keyword">int</span> offset;     <span class="comment">/* offset of reference to relocate */</span></span><br><span class="line">    <span class="keyword">int</span> symbol:<span class="number">24</span>;  <span class="comment">/* symbol the reference should point to */</span></span><br><span class="line">    <span class="keyword">int</span> type:<span class="number">8</span>;     <span class="comment">/* relocation type */</span></span><br><span class="line">&#125; Elf32_Rel;</span><br></pre></td></tr></table></figure>
 <p>ELF可执行的目标文件:</p>
-<p><img src="http://7vzmyh.com1.z0.glb.clouddn.com/executable_target_file.PNG" alt=""></p>
+<p><img src="/images/executable_target_file.PNG" alt=""></p>
 <p>加载可执行文件</p>
 <ul>
 <li>加载器运行时，在可执行文件的段头部表的指引下将可执行文件的相关内容拷贝到进程的虚拟地址空间所对应的内存中</li>
 <li>跳转到程序的入口点也就是符号_start的地址，执行_start例程</li>
 </ul>
 <figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="number">0x080480c0</span> &lt;_start&gt;:            <span class="comment">/* Entry point int .text */</span></span><br><span class="line">    call __libc_init_first      <span class="comment">/* Startup code in .text */</span></span><br><span class="line">    call _init                  <span class="comment">/* Startup code in .text */</span></span><br><span class="line">    call atexit                 <span class="comment">/* Startup code in .text */</span></span><br><span class="line">    call main                   <span class="comment">/* Application main routine */</span></span><br><span class="line">    call _exit                  <span class="comment">/* Returns control to OS */</span></span><br></pre></td></tr></table></figure>
-<h1 id="动态链接"><a href="#动态链接" class="headerlink" title="动态链接"></a>动态链接</h1><p><img src="http://7vzmyh.com1.z0.glb.clouddn.com/dynamic_link.PNG" alt=""></p>
+<h1 id="动态链接"><a href="#动态链接" class="headerlink" title="动态链接"></a>动态链接</h1><p><img src="/images/dynamic_link.PNG" alt=""></p>
 <p>链接器与动态库链接的时候没有拷贝代码段和数据段，而是拷贝了一些符号表，并记录了每个需要重定位的符号的标识以及定义该符号的动态库的标识</p>
 <p>与动态库链接生成的可执行的目标文件中多了一个.interp节，它包含动态链接器的路径，加载器加载的时候会识别这个节并运行动态链接器</p>
 <p>动态链接器将动态库文件映射到可执行程序的虚拟地址空间的共享区域内，并重定位尚未解析的引用符号</p>
@@ -847,7 +847,7 @@
   
   &copy;
    2014 - 
-  <span itemprop="copyrightYear">2018</span>
+  <span itemprop="copyrightYear">2019</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

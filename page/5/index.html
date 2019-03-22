@@ -419,7 +419,7 @@
 <h2 id="2-分析"><a href="#2-分析" class="headerlink" title="2. 分析"></a>2. 分析</h2><p>下面是一个辅助基类、便于减少篇幅（为了简单起见，后文中的所有函数调用并未检查返回的错误情况）：<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> ConditionBase</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    ConditionBase()</span><br><span class="line">    &#123;</span><br><span class="line">        pthread_mutex_init(&amp;mutex_, <span class="literal">NULL</span>);</span><br><span class="line">        pthread_cond_init(&amp;cond_, <span class="literal">NULL</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ~ConditionBase()</span><br><span class="line">    &#123;</span><br><span class="line">        pthread_mutex_destroy(&amp;mutex_);</span><br><span class="line">        pthread_cond_destroy(&amp;cond_);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="keyword">pthread_mutex_t</span>  mutex_;</span><br><span class="line">    <span class="keyword">pthread_cond_t</span>   cond_;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></p>
 <h3 id="2-1-1-版本一"><a href="#2-1-1-版本一" class="headerlink" title="2.1.1 版本一"></a>2.1.1 版本一</h3><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> Condition1 : <span class="keyword">public</span> ConditionBase</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">wait</span><span class="params">()</span></span><br><span class="line">    </span>&#123;</span><br><span class="line">        pthread_mutex_lock(&amp;mutex_);</span><br><span class="line">        pthread_cond_wait(&amp;cond_, &amp;mutex_);</span><br><span class="line">        pthread_mutex_unlock(&amp;mutex_);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">wakeup</span><span class="params">()</span></span><br><span class="line">    </span>&#123;</span><br><span class="line">        pthread_cond_signal(&amp;cond_);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
 <p>错误，这种情况有可能丢失事件。当signal发生在wait之前，就会丢失这次signal事件。如下图</p>
-<p><img src="http://7vzmyh.com1.z0.glb.clouddn.com/blog-condition_variable_1.png" alt=""><br>
+<p><img src="/images/blog-condition_variable_1.png" alt=""><br>
           <div class="post-more-link text-center">
             <a class="btn" href="/2015/01/21/trick-in-conditon-variable/#more" rel="contents">
               阅读全文 &raquo;
@@ -539,13 +539,13 @@
           <p>2014可以算作真正意义上参加工作的第一年（虽然2013毕业，但是毕业后的半年基本是处于迷糊状态），心态上、技术上都有了一个比较大的转变。以前心态上总是比较浮躁，想着捷径啊快速什么的，现在觉得做事情，尤其是做技术得沉淀下来，慢慢积累。</p>
 <p>工作上的事情基本是按部就班的进行，感觉没有什么想说的，但是这一年利用业余时间看了一些技术书籍，这里就按时间的顺序简单的总结一下。</p>
 <ul>
-<li>《C++ Primer》<br><img src="http://7vzmyh.com1.z0.glb.clouddn.com/blog-cover_cxx_primer.jpg" alt=""></li>
+<li>《C++ Primer》<br><img src="/images/blog-cover_cxx_primer.jpg" alt=""></li>
 </ul>
 <p>刚毕业的时候对于c++，嗯，基本就是学校课堂上那一点c with class的东西，以及做过几个课程设计的水平。所以选择了这本经典的大部头来学习，之前在网上看到很多人说这本书太厚读起来困难什么的，其实我觉得只要真的静下来读的话，没那么难，作者写的还是非常简单易懂的。</p>
 <p>因为想比较系统的学习一下c++的语法，在阅读学习的时候基本上碰到不太理解的地方就会停下来敲代码实践思考一下，每一道课后习题都敲代码做了一遍。最后读完后统计了一下课后习题的练习代码都有七八千行，这个是一开始没想到的。</p>
 <p>学习整本书的的过程大概花了2-3个月的时间，与大学课堂上学的那一点c with class相比，收获非常大。</p>
 <ul>
-<li>《Effective C++》<br><img src="http://7vzmyh.com1.z0.glb.clouddn.com/blog-cover_effective_cxx.jpg" alt=""></li>
+<li>《Effective C++》<br><img src="/images/blog-cover_effective_cxx.jpg" alt=""></li>
 </ul>
 <p>读完了c++ primer之后就寻思着读本进阶一点的书籍，于是另外一本经典的书籍自然的进入了我的视线中。这本书主要是一本谈c++经验、避免踏入各种坑的书籍，里面讲了很多非常好的经验，比如视c++为语言联邦、以对象管理资源(RAII)、尽量以传引用代替传值、尽量以组合代替继承、善用智能指针等等。个人认为。目前来说，对我最为有益和深刻的莫过于RAII了，有了它可以在一定程度上很好的避免资源泄露。当然里面也有一些经验谈目前还理解的不是太深刻，需要一定的经验后再去阅读消化了。大概用了1个半月的时间读完了这本书。
           <div class="post-more-link text-center">
@@ -976,7 +976,7 @@
   
   &copy;
    2014 - 
-  <span itemprop="copyrightYear">2018</span>
+  <span itemprop="copyrightYear">2019</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

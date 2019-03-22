@@ -67,14 +67,14 @@
 <meta property="og:description" content="1. 前言Google test是一款开源的白盒单元测试框架，据说目前在Google内部已在几千个项目中应用了基于该框架的白盒测试。
 最近的工作是在搞一个基于gtest框架搭建的自动化白盒测试项目，该项目上线也有一段时间了，目前来说效果还是挺不错的。
 侯捷先生在《STL源码剖析》中说过一句话：「会用STL，是一种档次。对STL原理有所了解，又是一个档次。追踪过STL源码又是一个档次。第三种档次的人">
-<meta property="og:image" content="http://7vzmyh.com1.z0.glb.clouddn.com/blog-gtest.png">
-<meta property="og:updated_time" content="2016-06-19T17:21:44.000Z">
+<meta property="og:image" content="http://originlee.com/images/blog-gtest.png">
+<meta property="og:updated_time" content="2019-03-22T14:42:10.221Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="解析gtest框架运行机制">
 <meta name="twitter:description" content="1. 前言Google test是一款开源的白盒单元测试框架，据说目前在Google内部已在几千个项目中应用了基于该框架的白盒测试。
 最近的工作是在搞一个基于gtest框架搭建的自动化白盒测试项目，该项目上线也有一段时间了，目前来说效果还是挺不错的。
 侯捷先生在《STL源码剖析》中说过一句话：「会用STL，是一种档次。对STL原理有所了解，又是一个档次。追踪过STL源码又是一个档次。第三种档次的人">
-<meta name="twitter:image" content="http://7vzmyh.com1.z0.glb.clouddn.com/blog-gtest.png">
+<meta name="twitter:image" content="http://originlee.com/images/blog-gtest.png">
 
 
 
@@ -353,7 +353,7 @@
 <h2 id="3-总结"><a href="#3-总结" class="headerlink" title="3. 总结"></a>3. 总结</h2><p>经过对预处理得到的TEST宏进行逆向跟踪，到正向跟踪RUN_ALL_TESTS宏，了解了gtest的整个运行过程，里面涉及到一下GOF设计模式的运用，比如工厂函数、Singleton、Impl等。仔细推敲便可发现gtest设计层层跳转，虽然有些复杂，但也非常巧妙，很多地方非常值得我们自己写代码的时候学习的。</p>
 <p>另外本文没有提到的地方如断言宏，输出log日志等，因为比较简单就略过了。断言宏和输出log就是在每次遍历调用TestBody的时候进行相应的判断和输出打印，有兴趣的童鞋可以自行研究啦。</p>
 <p>下图是一个简单的TEST宏展开后的流程图</p>
-<p><img src="http://7vzmyh.com1.z0.glb.clouddn.com/blog-gtest.png" alt=""></p>
+<p><img src="/images/blog-gtest.png" alt=""></p>
 <p>最后再简单将gtest的运行过程简述一遍：</p>
 <ol>
 <li>整个测试项目只有一个UnitTest对象，因而整个项目也只有一个UnitTestImpl对象。</li>
@@ -591,7 +591,7 @@
   
   &copy;
    2014 - 
-  <span itemprop="copyrightYear">2018</span>
+  <span itemprop="copyrightYear">2019</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>
