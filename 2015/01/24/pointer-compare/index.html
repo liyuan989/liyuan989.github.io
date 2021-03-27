@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico">
+  <link rel="mask-icon" href="/favicon.ico" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"originlee.com","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"right","display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="有人说指针是c语言的灵魂，也有人说没学好指针就等于不会c语言。 虽然在现代c++中一般都是推荐尽量避免使用原生的raw指针，而是以smart pointer 和reference替代之。但是无论怎样，对于c&#x2F;c++来说，指针始终是个绕不过去的坎。究其原因，是因为c&#x2F;c++都是支持面向底层操作的语言，而面向底层操作就得能操纵内存，这个时候就需要指针了。为什么呢？个人觉得指针实际上就是对机器语言&#x2F;as">
+<meta property="og:type" content="article">
+<meta property="og:title" content="浅谈指针的比较">
+<meta property="og:url" content="http://originlee.com/2015/01/24/pointer-compare/index.html">
+<meta property="og:site_name" content="Less is more">
+<meta property="og:description" content="有人说指针是c语言的灵魂，也有人说没学好指针就等于不会c语言。 虽然在现代c++中一般都是推荐尽量避免使用原生的raw指针，而是以smart pointer 和reference替代之。但是无论怎样，对于c&#x2F;c++来说，指针始终是个绕不过去的坎。究其原因，是因为c&#x2F;c++都是支持面向底层操作的语言，而面向底层操作就得能操纵内存，这个时候就需要指针了。为什么呢？个人觉得指针实际上就是对机器语言&#x2F;as">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2015-01-24T07:19:00.000Z">
+<meta property="article:modified_time" content="2016-06-19T17:21:44.000Z">
+<meta property="article:author" content="Li Yuan">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://originlee.com/2015/01/24/pointer-compare/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>浅谈指针的比较 | Less is more</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Less is more</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://originlee.com/2015/01/24/pointer-compare/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="Li Yuan">
+      <meta itemprop="description" content="种一棵树最好的时间是十年前，其次是现在">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Less is more">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          浅谈指针的比较
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2015-01-24 15:19:00" itemprop="dateCreated datePublished" datetime="2015-01-24T15:19:00+08:00">2015-01-24</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C++</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>有人说指针是c语言的灵魂，也有人说没学好指针就等于不会c语言。</p>
+<p>虽然在现代c++中一般都是推荐尽量避免使用原生的raw指针，而是以smart pointer 和reference替代之。但是无论怎样，对于c/c++来说，指针始终是个绕不过去的坎。究其原因，是因为c/c++都是支持面向底层操作的语言，而面向底层操作就得能操纵内存，这个时候就需要指针了。为什么呢？个人觉得指针实际上就是对机器语言/asm中的通过虚拟地址操作内存的这一行为的一种抽象。</p>
+<p>例如</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">movl %eax, (%edx)</span><br></pre></td></tr></table></figure>
+<p>将寄存器eax中的值写入内存地址为寄存器edx的值的内存中。如果把edx看做一个指针的话，也就相当于</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">*p_edx &#x3D; value_eax</span><br></pre></td></tr></table></figure>
+<h2 id="1-指针的比较"><a href="#1-指针的比较" class="headerlink" title="1. 指针的比较"></a>1. 指针的比较</h2><p>关于指针，有着许多技巧和用途，后文主要谈谈关于c++中指针比较操作的一些容易踏入的坑。</p>
+<p>先来看看这段代码<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">BaseA</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="keyword">int</span> a;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">BaseB</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="keyword">double</span> b;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Derived</span> :</span> <span class="keyword">public</span> BaseA, <span class="keyword">public</span> BaseB</span><br><span class="line">&#123;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span> <span class="keyword">const</span> *argv[])</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    Derived derivd;</span><br><span class="line">    Derived* pd = &amp;derivd;</span><br><span class="line">    BaseB* pb = &amp;derivd;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;pb = %p\n&quot;</span>, pb);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;pd = %p\n&quot;</span>, pd);</span><br><span class="line">    <span class="keyword">if</span> (pb == pd)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;pb == pd\n&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;pb != pd\n&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>输出的结果是：<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">pb &#x3D; 0028FEE0</span><br><span class="line">pd &#x3D; 0028FED8</span><br><span class="line">pb &#x3D;&#x3D; pd</span><br></pre></td></tr></table></figure><br>可以看到指针pb和pd值并不一样，但是编译器却认为他们相等，为什么呢？<span id="more"></span></p>
+<p>1.  当2个指针的静态类型以及所指对象的类型都属于同一个继承层次结构中，并且其中一个指针类型是所指对象的静态类型的时候，指针的比较，实际上比较的是两个指针是否指向同一个对象。</p>
+<p>若2个指针指向同一个对象，被编译器决议为相等。编译器在比较的时候加上适当的offset值，例如上面的情况，相当于在比较的时候编译器做了这样的改动:<br><figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span>((pb - <span class="keyword">sizeof</span>(<span class="keyword">int</span>) == pd)</span><br></pre></td></tr></table></figure><br>offset是由c++对象的内存模型决定的，具体的就不再本文讨论的范畴了。</p>
+<p>若2个指针指向不同的对象，就被决议为不相等，并且比较的是指针保存的地址的值的大小。<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span> <span class="keyword">const</span> *argv[])</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    Derived derived1;</span><br><span class="line">    Derived derived2;</span><br><span class="line">    Derived* pd = &amp;derived1;</span><br><span class="line">    BaseB* pb = &amp;derived2;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;%p\n&quot;</span>, pd);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;%p\n&quot;</span>, pb);</span><br><span class="line">    <span class="keyword">if</span> (pd &lt; pb)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;pd &lt; pb\n&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (pd == pb)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;pd == pb\n&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;pd &gt; pb\n&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>得到的结果为：<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">0028FED8</span><br><span class="line">0028FED0</span><br><span class="line">pd &gt; pb</span><br></pre></td></tr></table></figure><br>2.  当2个指针的静态类型不属于同一个继承层次结构中，但是2个指针都指向同一个对象的时候，该比较是违法行为，编译器会报编译期错误<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span> <span class="keyword">const</span> *argv[])</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    Derived derivd;</span><br><span class="line">    Derived* pd = &amp;derivd;</span><br><span class="line">    <span class="keyword">int</span>* pb = <span class="keyword">reinterpret_cast</span>&lt;<span class="keyword">int</span>*&gt;(&amp;derivd);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;pb = %p\n&quot;</span>, pb);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;pd = %p\n&quot;</span>, pd);</span><br><span class="line">    <span class="keyword">if</span> (pb == pd)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;pb == pd\n&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;pb != pd\n&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>编译器报错为：</p>
+<blockquote>
+<p>error: comparison between distinct pointer types ‘int<em>‘ and ‘Derived</em>‘ lacks a cast [-fpermissive]&gt;<br>if (pb == pd)</p>
+</blockquote>
+<p>3.  当2个指针的静态类型以及所指对象类型都属于同一个继承层次结构，但是2个指针的静态类型都不是所指对象的类型时，该比较是违法行为，编译器会报编译期错误：</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span> <span class="keyword">const</span> *argv[])</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    Derived derivd;</span><br><span class="line">    BaseB* pb = &amp;derivd;</span><br><span class="line">    BaseA* pa = &amp;derivd;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;pb = %p\n&quot;</span>, pb);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;pd = %p\n&quot;</span>, pa);</span><br><span class="line">    <span class="keyword">if</span> (pb == pa)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;pb == pa\n&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;pb != pa\n&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>编译器报错为：</p>
+<blockquote>
+<p>error: comparison between distinct pointer types ‘BaseB<em>‘ and ‘BaseA</em>‘ lacks a cast&gt;<br>if (pb == pa)</p>
+</blockquote>
+<p>另外一些其他的行为，例如2个指针的类型不同但同属于一个继承层次，然后通过强制类型转换让他们俩都指向一个不属于该继承层次的对象，这样的行为都是为未定义行为，也许编译器不会报编译期错误，但结果是未定义的，可能是任何结果。</p>
+<p>可能有人会说，什么时候指针比较的是他们所保存的地址的值呢呢？</p>
+<p>答案是当2个指针的静态类型相同的时候：</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span> <span class="keyword">const</span> *argv[])</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    Derived derived1;</span><br><span class="line">    Derived derived2;</span><br><span class="line">    Derived* p1 = &amp;derived1;</span><br><span class="line">    Derived* p2 = &amp;derived2;</span><br><span class="line">    <span class="keyword">if</span> (p1 &lt; p2)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;p1 &lt; p2\n&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (p1 == p2)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;p1 == p2\n&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;p1 &gt; p2\n&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>结果为：p1 &gt; p2</p>
+<h2 id="2-shared-ptr的owner-before"><a href="#2-shared-ptr的owner-before" class="headerlink" title="2. shared_ptr的owner_before"></a>2. shared_ptr的owner_before</h2><p>boost::shared_ptr/std::shared_ptr中有一个owner_before成员函数，原型为<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="class"><span class="keyword">class</span> <span class="title">u</span>&gt;</span> <span class="function"><span class="keyword">bool</span> <span class="title">owner_before</span> <span class="params">(<span class="keyword">const</span> shared_ptr&lt;u&gt;&amp; x)</span> <span class="keyword">const</span></span>;</span><br><span class="line"><span class="keyword">template</span> &lt;<span class="class"><span class="keyword">class</span> <span class="title">u</span>&gt;</span> <span class="function"><span class="keyword">bool</span> <span class="title">owner_before</span> <span class="params">(<span class="keyword">const</span> weak_ptr&lt;u&gt;&amp; x)</span> <span class="keyword">const</span></span>;</span><br></pre></td></tr></table></figure><br>当该shared_ptr和x的类型同属一个继承层次时，不管他们类型是否相同，他们两都被决议为“相等”。当他们的类型不属于同一继承层次时，比较的为他们所管理指针的地址值的大小。<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span> <span class="keyword">const</span> *argv[])</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="function">boost::shared_ptr&lt;Derived&gt; <span class="title">pd</span><span class="params">(<span class="keyword">new</span> Derived)</span></span>;</span><br><span class="line">    <span class="function">boost::shared_ptr&lt;BaseB&gt; <span class="title">pb</span><span class="params">(pd)</span></span>;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;%p %p\n&quot;</span>, pd.<span class="built_in">get</span>(), pb.<span class="built_in">get</span>());</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;%d %d\n&quot;</span>, pd &lt; pb, pb &lt; pd);  <span class="comment">// 0 0</span></span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;%d %d\n&quot;</span>, pd.<span class="built_in">owner_before</span>(pb), pb.<span class="built_in">owner_before</span>(pd));  <span class="comment">// 0 0</span></span><br><span class="line">    boost::shared_ptr&lt;void&gt; p0(pd), p1(pb);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;%p %p\n&quot;</span>, p0.<span class="built_in">get</span>(), p1.<span class="built_in">get</span>());</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;%d %d\n&quot;</span>, p0.<span class="built_in">get</span>() &lt; p1.<span class="built_in">get</span>(), p1.<span class="built_in">get</span>() &lt; p0.<span class="built_in">get</span>());  <span class="comment">// 1 0</span></span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;%d %d\n&quot;</span>, p0.<span class="built_in">owner_before</span>(p1), p1.<span class="built_in">owner_before</span>(p0));  <span class="comment">// 0 0</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>为什么shared_ptr会提供这样的成员函数呢？</p>
+<p>因为一个智能指针有可能指向了另一个智能指针指向对象中的某一部分，但又要保证这两个智能指针销毁时，只对那个被指的对象完整地析构一次，而不是两个指针分别析构一次。</p>
+<p>在这种情况下，指针就可以分为两种，一种是 stored pointer 它是指针本身的类型所表示的对象（可能是一个大对象中的一部分）；另一种是 owned pointer 指向内存中的实际完整对象（这一个对象可能被许多智能指针指向了它里面的不同部分，但最终只析构一次）。owner-based order 就是指后一种情况，如果内存中只有一个对象，然后被许多 shared pointer 指向了其中不同的部分，那么这些指针本身的地址肯定是不同的，也就是operator&lt;()可以比较它们，并且它们都不是对象的 owner，它们销毁时不会析构对象。但它们都指向了一个对象，在owner-based order 意义下它们是相等的。</p>
+<p><a target="_blank" rel="noopener" href="http://www.cplusplus.com/reference/memory/shared_ptr/owner_before/">cpluscplus</a>中是这样解释的：</p>
+<blockquote>
+<p>returns whether the object is considered to go before _x_ following a strict weak <em>owner-based</em> order.&gt;</p>
+<p>unlike the <a target="_blank" rel="noopener" href="http://www.cplusplus.com/shared_ptr:operators">operator&lt; overload</a>, this ordering takes into consideration the <a target="_blank" rel="noopener" href="http://www.cplusplus.com/shared_ptr">shared_ptr</a>‘s <em>owned pointer</em>, and not the <a target="_blank" rel="noopener" href="http://www.cplusplus.com/shared_ptr::get">stored pointer</a> in such a way that two of these objects are considered equivalent (i.e., this function returns <tt>false </tt>no matter the order of the operands) if they both share ownership, or they are both empty, even if their <a target="_blank" rel="noopener" href="http://www.cplusplus.com/shared_ptr::get">stored pointer</a> value are different.&gt;</p>
+<p>the <em>stored pointer</em> (i.e., the pointer the <a target="_blank" rel="noopener" href="http://www.cplusplus.com/shared_ptr">shared_ptr</a> object <a target="_blank" rel="noopener" href="http://www.cplusplus.com/shared_ptr::operator*">dereferences</a> to) may not be the <em>owned pointer</em> (i.e., the pointer deleted on object destruction) if the <a target="_blank" rel="noopener" href="http://www.cplusplus.com/shared_ptr">shared_ptr</a> object is an alias (<a target="_blank" rel="noopener" href="http://www.cplusplus.com/shared_ptr::shared_ptr">alias-constructed</a> objects and their copies).&gt;</p>
+<p>this function is called by <a target="_blank" rel="noopener" href="http://www.cplusplus.com/owner_less">owner_less</a> to determine its result.</p>
+</blockquote>
+<p><a target="_blank" rel="noopener" href="http://en.cppreference.com/w/cpp/memory/shared_ptr/owner_before">cppreference</a>中的解释：</p>
+<blockquote>
+<p>checks whether this shared_ptr precedes other in implementation defined owner-based (as opposed to value-based) order. the order is such that two smart pointers compare equivalent only if they are both empty or if they both own the same object, even if the values of the pointers obtained by get() are different (e.g. because they point at different subobjects within the same object)&gt;</p>
+<p>this ordering is used to make shared and weak pointers usable as keys in associative containers, typically through <span class="t-lc"><a target="_blank" rel="noopener" href="http://en.cppreference.com/w/cpp/memory/owner_less" title="cpp/memory/owner less">std::owner_less</a>.</span></p>
+</blockquote>
+<h2 id="3-总结"><a href="#3-总结" class="headerlink" title="3. 总结"></a>3. 总结</h2><ul>
+<li>指针之间的比较，要么指针的静态类型相同，要么指针的静态类型不同但他们的类型同属于同一继承层次且其中一个指针的静态类型为所指对象的类型。</li>
+<li>指针的静态类型相同时，比较的是地址的值的大小。</li>
+<li>指针的静态类型不同，但是他们的类型属于同一继承层次，并且其中一个指针的静态类型为所指对象的类型时，比较的是两指针是否指向同一对象。若是指向同一对象，则两指针“相等”；若不是指向同一对象，则比较指针的地址值的大小。</li>
+<li>智能指针shared_ptr/weak_ptr的onwer_before成员函数描述的是：当比较的2个智能指针的类型属于同一继承层次时表现为“相等”的含义；当2个智能指针的类型不属于同一继承层次时，比较的是所管理指针的地址值的大小。</li>
+</ul>
+<h2 id="4-参考文献"><a href="#4-参考文献" class="headerlink" title="4. 参考文献"></a>4. 参考文献</h2><ol>
+<li>cplusplus. <a target="_blank" rel="noopener" href="http://www.cplusplus.com/reference/memory/shared_ptr/owner_before/">std::shared_ptr::owner_before</a></li>
+<li>cppreference. <a target="_blank" rel="noopener" href="http://en.cppreference.com/w/cpp/memory/shared_ptr/owner_before">std::shared_ptr::owner_before</a><br>（完）</li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2015/01/21/trick-in-conditon-variable/" rel="prev" title="条件变量的陷阱与思考">
+      <i class="fa fa-chevron-left"></i> 条件变量的陷阱与思考
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2015/01/31/thread-safe-singleton-in-cxx/" rel="next" title="C++中多线程与Singleton的那些事儿">
+      C++中多线程与Singleton的那些事儿 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E6%8C%87%E9%92%88%E7%9A%84%E6%AF%94%E8%BE%83"><span class="nav-number">1.</span> <span class="nav-text">1. 指针的比较</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-shared-ptr%E7%9A%84owner-before"><span class="nav-number">2.</span> <span class="nav-text">2. shared_ptr的owner_before</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E6%80%BB%E7%BB%93"><span class="nav-number">3.</span> <span class="nav-text">3. 总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE"><span class="nav-number">4.</span> <span class="nav-text">4. 参考文献</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Li Yuan"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">Li Yuan</p>
+  <div class="site-description" itemprop="description">种一棵树最好的时间是十年前，其次是现在</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">29</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="mailto:liyuan989@gmail.com" title="Email → mailto:liyuan989@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>Email</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://cn.linkedin.com/in/liyuan989" title="Linkedin → https:&#x2F;&#x2F;cn.linkedin.com&#x2F;in&#x2F;liyuan989" rel="noopener" target="_blank"><i class="fab fa-linkedin fa-fw"></i>Linkedin</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/liyuan989" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;liyuan989" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/origin-989" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;origin-989" rel="noopener" target="_blank"><i class="fa fa-globe fa-fw"></i>Zhihu</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="http://weibo.com/liyuan989" title="Weibo → http:&#x2F;&#x2F;weibo.com&#x2F;liyuan989" rel="noopener" target="_blank"><i class="fab fa-weibo fa-fw"></i>Weibo</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2014 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Li Yuan</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

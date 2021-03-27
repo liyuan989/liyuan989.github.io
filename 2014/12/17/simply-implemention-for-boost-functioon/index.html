@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico">
+  <link rel="mask-icon" href="/favicon.ico" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"originlee.com","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"right","display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="boost::function和boost:bind是一对强大的利器。相信用过的童鞋多少有些体会。 虽然平时在用boost::function，但是用的时候心中总会一些不安，因为不知道它是怎么实现的。于是，就自己琢磨着简单的实现一下，搞明白基本的原理。 对于这个简单实现，有以下几个目标：  选取比较常见的接收2个参数的情况。 支持普通函数&#x2F;函数指针、成员函数指针。 兼容函数对象、函数适配器&#x2F;boo">
+<meta property="og:type" content="article">
+<meta property="og:title" content="boost::function的简单实现">
+<meta property="og:url" content="http://originlee.com/2014/12/17/simply-implemention-for-boost-functioon/index.html">
+<meta property="og:site_name" content="Less is more">
+<meta property="og:description" content="boost::function和boost:bind是一对强大的利器。相信用过的童鞋多少有些体会。 虽然平时在用boost::function，但是用的时候心中总会一些不安，因为不知道它是怎么实现的。于是，就自己琢磨着简单的实现一下，搞明白基本的原理。 对于这个简单实现，有以下几个目标：  选取比较常见的接收2个参数的情况。 支持普通函数&#x2F;函数指针、成员函数指针。 兼容函数对象、函数适配器&#x2F;boo">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2014-12-17T04:35:00.000Z">
+<meta property="article:modified_time" content="2016-06-19T17:21:44.000Z">
+<meta property="article:author" content="Li Yuan">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://originlee.com/2014/12/17/simply-implemention-for-boost-functioon/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>boost::function的简单实现 | Less is more</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Less is more</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://originlee.com/2014/12/17/simply-implemention-for-boost-functioon/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="Li Yuan">
+      <meta itemprop="description" content="种一棵树最好的时间是十年前，其次是现在">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Less is more">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          boost::function的简单实现
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2014-12-17 12:35:00" itemprop="dateCreated datePublished" datetime="2014-12-17T12:35:00+08:00">2014-12-17</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C++</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>boost::function和boost:bind是一对强大的利器。相信用过的童鞋多少有些体会。</p>
+<p>虽然平时在用boost::function，但是用的时候心中总会一些不安，因为不知道它是怎么实现的。于是，就自己琢磨着简单的实现一下，搞明白基本的原理。</p>
+<p>对于这个简单实现，有以下几个目标：</p>
+<ul>
+<li>选取比较常见的接收2个参数的情况。</li>
+<li>支持普通函数/函数指针、成员函数指针。</li>
+<li>兼容函数对象、函数适配器/boost::bind。</li>
+</ul>
+<h2 id="1-实现"><a href="#1-实现" class="headerlink" title="1. 实现"></a>1. 实现</h2><p>首先，定义一个基类：<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> R, <span class="keyword">typename</span> T1, <span class="keyword">typename</span> T2&gt;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">base</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="keyword">virtual</span> ~<span class="built_in">base</span>()</span><br><span class="line">    &#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> R <span class="title">operator</span><span class="params">()</span><span class="params">(T1, T2)</span> </span>= <span class="number">0</span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure><br>然后再实现一个普通函数/函数指针的版本：<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> R, <span class="keyword">typename</span> T1, <span class="keyword">typename</span> T2&gt;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">func</span> :</span> <span class="keyword">public</span> base&lt;R, T1, T2&gt;</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">func</span>(<span class="built_in">R</span> (*ptr)(T1, T2))</span><br><span class="line">        : <span class="built_in">ptr_</span>(ptr)</span><br><span class="line">    &#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> R <span class="title">operator</span><span class="params">()</span><span class="params">(T1 a, T2 b)</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">ptr_</span>(a, b);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="built_in">R</span> (*ptr_)(T1, T2);</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure><br><span id="more"></span></p>
+<p>接着，实现支持成员函数指针的版本：<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> R, <span class="keyword">typename</span> Class, <span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">member</span> :</span> <span class="keyword">public</span> base&lt;R, Class, T&gt;</span><br><span class="line">&#123;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> R, <span class="keyword">typename</span> Class, <span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">member</span>&lt;</span>R, Class*, T&gt; : <span class="keyword">public</span> base&lt;R, Class*, T&gt;</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">member</span>(<span class="built_in">R</span> (Class::*ptr)(T))</span><br><span class="line">        : <span class="built_in">ptr_</span>(ptr)</span><br><span class="line">    &#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> R <span class="title">operator</span><span class="params">()</span><span class="params">(Class* obj, T a)</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> (obj-&gt;*ptr_)(a);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="built_in">R</span> (Class::*ptr_)(T);</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure><br>可能有的童鞋要问，为什么这里要有一个空的member类呢？这个问题放到下面解释。</p>
+<p>自然的轮到最后一个种情况，函数对象/boost::bind类型的了：<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T, <span class="keyword">typename</span> R, <span class="keyword">typename</span> T1, <span class="keyword">typename</span> T2&gt;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">functor</span> :</span> <span class="keyword">public</span> base&lt;R, T1, T2&gt;</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">functor</span>(<span class="keyword">const</span> T&amp; obj)</span><br><span class="line">        : <span class="built_in">obj_</span>(obj)</span><br><span class="line">    &#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> R <span class="title">operator</span><span class="params">()</span><span class="params">(T1 a, T2 b)</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">obj_</span>(a, b);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    T obj_;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure><br>最后，就是可用的function类了，实现如下：<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">function</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> R, <span class="keyword">typename</span> T1, <span class="keyword">typename</span> T2&gt;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">function</span>&lt;</span><span class="built_in">R</span> (T1, T2)&gt;</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="keyword">template</span>&lt;<span class="keyword">typename</span> Class, <span class="keyword">typename</span> _R, <span class="keyword">typename</span> _T2&gt;</span><br><span class="line">    <span class="built_in">function</span>(_R (Class::*ptr)(_T2))</span><br><span class="line">        : <span class="built_in">ptr_</span>(<span class="keyword">new</span> member&lt;R, T1, T2&gt;(ptr))</span><br><span class="line">    &#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">template</span>&lt;<span class="keyword">typename</span> _R, <span class="keyword">typename</span> _T1, <span class="keyword">typename</span> _T2&gt;</span><br><span class="line">    <span class="built_in">function</span>(_R (*ptr)(_T1, _T2))</span><br><span class="line">        : <span class="built_in">ptr_</span>(<span class="keyword">new</span> func&lt;R, T1, T2&gt;(ptr))</span><br><span class="line">    &#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line">    <span class="built_in">function</span>(<span class="keyword">const</span> T&amp; obj)</span><br><span class="line">        : <span class="built_in">ptr_</span>(<span class="keyword">new</span> functor&lt;T, R, T1, T2&gt;(obj))</span><br><span class="line">    &#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ~<span class="built_in">function</span>()</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">delete</span> ptr_;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> R <span class="title">operator</span><span class="params">()</span><span class="params">(T1 a, T2 b)</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> ptr_-&gt;<span class="built_in"><span class="keyword">operator</span></span>()(a, b);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    base&lt;R, T1, T2&gt;* ptr_;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure><br>大家可能注意到了，和前面的member类一样，function也有一个空的类，那么这些有什么用呢？</p>
+<p>这么做的原因，主要是利用模板偏特化来进行类型萃取，正常的function声明的时候，比如function<int (int, int)>而不是func&lt;int, int, int&gt;。所以用模板的偏特化的版本<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> R, <span class="keyword">typename</span> T1, <span class="keyword">typename</span> T2&gt;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">function</span>&lt;</span><span class="built_in">R</span> (T1, T2)&gt;</span><br></pre></td></tr></table></figure><br>就可以把int (int, int)萃取为R = int，T1 = int，T2 = int了。</p>
+<p>同理，对于member类，由于一般我们将成员函数指针绑定到function的时候，比如int function(Type<em>, int)，其中Type是成员函数所属类。也就是说在function中的成员ptr_的类型是base&lt;int, Type</em>, int&gt;，那么在function的构造函数中构造的member类的类型就是member&lt;int, Type<em>, int&gt;，也就是class = Type</em>，但是我们需要的却是class = Type。所以这里得用偏特化萃取一下：<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> R, <span class="keyword">typename</span> Class, <span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">member</span>&lt;</span>R, Class*, T&gt; : <span class="keyword">public</span> base&lt;R, Class*, T&gt;</span><br></pre></td></tr></table></figure><br>这样得到的class模板形参就会被编译器决议为Type，而不是Type*了。</p>
+<p>另外提一下，在function的3种情况的构造函数是模板成员函数，而不是普通成员函数：<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> Class, <span class="keyword">typename</span> _R, <span class="keyword">typename</span> _T2&gt;</span><br><span class="line"><span class="built_in">function</span>(_R (Class::*ptr)(_T2))</span><br><span class="line">    : <span class="built_in">ptr_</span>(<span class="keyword">new</span> member&lt;R, T1, T2&gt;(ptr))</span><br><span class="line">&#123;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> _R, <span class="keyword">typename</span> _T1, <span class="keyword">typename</span> _T2&gt;</span><br><span class="line"><span class="built_in">function</span>(_R (*ptr)(_T1, _T2))</span><br><span class="line">    : <span class="built_in">ptr_</span>(<span class="keyword">new</span> func&lt;R, T1, T2&gt;(ptr))</span><br><span class="line">&#123;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="built_in">function</span>(<span class="keyword">const</span> T&amp; obj)</span><br><span class="line">    : <span class="built_in">ptr_</span>(<span class="keyword">new</span> functor&lt;T, R, T1, T2&gt;(obj))</span><br><span class="line">&#123;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>前2种情况，普通函数/函数指针对应的构造函数和成员函数指针对应的构造函数实现为成员模板，主要是为了兼容参数的隐式转换，例如声明一个function的类型为function<int (int, int)> foo，调用的时候却传入两个double类型，foo(1.1, 2.2)， double类型隐式转换成了int类型。这样也符合boost:function本来的兼容可转换的调用物这一特性。</p>
+<p>而第3种情况的成员模板，是为了获取传入的函数对象/boost::bind的类型，以便在存储在functor的数据成员中，这也是为什么functor类的模板参数比其他版本多了一个的原因。</p>
+<p>然后，我们来测试一下:<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">get</span><span class="params">(<span class="keyword">int</span> a, <span class="keyword">int</span> b)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    std::cout &lt;&lt; a+b &lt;&lt; std::endl;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Point</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">get</span><span class="params">(<span class="keyword">int</span> a)</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        std::cout &lt;&lt; <span class="string">&quot;Point::get called: a = &quot;</span>&lt;&lt; a &lt;&lt; std::endl;</span><br><span class="line">        <span class="keyword">return</span> a;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">doit</span><span class="params">(<span class="keyword">int</span> a, <span class="keyword">int</span> b)</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        std::cout &lt;&lt; <span class="string">&quot;Point::doit called: a = &quot;</span>&lt;&lt; a+b &lt;&lt; std::endl;</span><br><span class="line">        <span class="keyword">return</span> a+b;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span> <span class="keyword">const</span> *argv[])</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="function">function&lt;<span class="title">int</span> <span class="params">(<span class="keyword">int</span>, <span class="keyword">int</span>)</span>&gt; <span class="title">foo</span><span class="params">(get)</span></span>;</span><br><span class="line">    <span class="built_in">foo</span>(<span class="number">10.1</span>, <span class="number">10.3</span>);</span><br><span class="line"></span><br><span class="line">    <span class="function">function&lt;<span class="title">int</span> <span class="params">(Point*, <span class="keyword">int</span>)</span>&gt; <span class="title">bar</span><span class="params">(&amp;Point::get)</span></span>;</span><br><span class="line">    Point point;</span><br><span class="line">    <span class="built_in">bar</span>(&amp;point, <span class="number">30</span>);</span><br><span class="line"></span><br><span class="line">    <span class="function">function&lt;<span class="title">int</span> <span class="params">(<span class="keyword">int</span>, <span class="keyword">int</span>)</span>&gt; <span class="title">obj</span><span class="params">(boost::bind(&amp;Point::doit, &amp;point, _1, _2))</span></span>;</span><br><span class="line">    <span class="built_in">obj</span>(<span class="number">90</span>, <span class="number">100</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>结果为：<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">20</span><br><span class="line">Point::get called: a &#x3D; 30</span><br><span class="line">Point::doit called: a &#x3D; 190</span><br></pre></td></tr></table></figure><br>可以看到，输出的内容正是所期望的结果。</p>
+<h2 id="2-参考文献"><a href="#2-参考文献" class="headerlink" title="2. 参考文献"></a>2. 参考文献</h2><ol>
+<li>boost中文手册. <a target="_blank" rel="noopener" href="http://cpp.ezbty.org//myfiles/boost/libs/functional/index.html">Improved Function Object Adapters 改良的函数对象适配器</a><br>（完）</li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2014/12/02/overload-between-template-function-and-non-template-function-in-cxx/" rel="prev" title="聊聊C++模板函数与非模板函数的重载">
+      <i class="fa fa-chevron-left"></i> 聊聊C++模板函数与非模板函数的重载
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2014/12/18/simply-implemention-for-boost-bind/" rel="next" title="boost::bind的简单实现">
+      boost::bind的简单实现 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E5%AE%9E%E7%8E%B0"><span class="nav-number">1.</span> <span class="nav-text">1. 实现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE"><span class="nav-number">2.</span> <span class="nav-text">2. 参考文献</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Li Yuan"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">Li Yuan</p>
+  <div class="site-description" itemprop="description">种一棵树最好的时间是十年前，其次是现在</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">29</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="mailto:liyuan989@gmail.com" title="Email → mailto:liyuan989@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>Email</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://cn.linkedin.com/in/liyuan989" title="Linkedin → https:&#x2F;&#x2F;cn.linkedin.com&#x2F;in&#x2F;liyuan989" rel="noopener" target="_blank"><i class="fab fa-linkedin fa-fw"></i>Linkedin</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/liyuan989" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;liyuan989" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/origin-989" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;origin-989" rel="noopener" target="_blank"><i class="fa fa-globe fa-fw"></i>Zhihu</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="http://weibo.com/liyuan989" title="Weibo → http:&#x2F;&#x2F;weibo.com&#x2F;liyuan989" rel="noopener" target="_blank"><i class="fab fa-weibo fa-fw"></i>Weibo</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2014 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Li Yuan</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

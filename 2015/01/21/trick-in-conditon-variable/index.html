@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico">
+  <link rel="mask-icon" href="/favicon.ico" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"originlee.com","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"right","display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="1. 前言在多线程编程中，互斥锁与条件变量恐怕是最常用也是最实用的线程同步原语。 关于条件变量一共也就pthread_cond_init、pthread_cond_destroy、pthread_cond_wait、pthread_cond_timedwait、pthread_cond_signal、pthread_cond_broadcast这么几个函数，但是在实际使用中却是很容易用错，后文将来">
+<meta property="og:type" content="article">
+<meta property="og:title" content="条件变量的陷阱与思考">
+<meta property="og:url" content="http://originlee.com/2015/01/21/trick-in-conditon-variable/index.html">
+<meta property="og:site_name" content="Less is more">
+<meta property="og:description" content="1. 前言在多线程编程中，互斥锁与条件变量恐怕是最常用也是最实用的线程同步原语。 关于条件变量一共也就pthread_cond_init、pthread_cond_destroy、pthread_cond_wait、pthread_cond_timedwait、pthread_cond_signal、pthread_cond_broadcast这么几个函数，但是在实际使用中却是很容易用错，后文将来">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://originlee.com/images/blog-condition_variable_1.png">
+<meta property="og:image" content="http://originlee.com/images/blog-condition_variable_2.png">
+<meta property="og:image" content="http://originlee.com/images/blog-condition_variable_3.png">
+<meta property="og:image" content="http://originlee.com/images/blog-condition_variable_8.png">
+<meta property="article:published_time" content="2015-01-21T06:10:00.000Z">
+<meta property="article:modified_time" content="2019-03-22T15:10:56.619Z">
+<meta property="article:author" content="Li Yuan">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://originlee.com/images/blog-condition_variable_1.png">
+
+<link rel="canonical" href="http://originlee.com/2015/01/21/trick-in-conditon-variable/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>条件变量的陷阱与思考 | Less is more</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Less is more</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://originlee.com/2015/01/21/trick-in-conditon-variable/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="Li Yuan">
+      <meta itemprop="description" content="种一棵树最好的时间是十年前，其次是现在">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Less is more">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          条件变量的陷阱与思考
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2015-01-21 14:10:00" itemprop="dateCreated datePublished" datetime="2015-01-21T14:10:00+08:00">2015-01-21</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%A4%9A%E7%BA%BF%E7%A8%8B/" itemprop="url" rel="index"><span itemprop="name">多线程</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="1-前言"><a href="#1-前言" class="headerlink" title="1. 前言"></a>1. 前言</h2><p>在多线程编程中，互斥锁与条件变量恐怕是最常用也是最实用的线程同步原语。</p>
+<p>关于条件变量一共也就pthread_cond_init、pthread_cond_destroy、pthread_cond_wait、pthread_cond_timedwait、pthread_cond_signal、pthread_cond_broadcast这么几个函数，但是在实际使用中却是很容易用错，后文将来分析几种常见使用情况的正确性。</p>
+<h2 id="2-分析"><a href="#2-分析" class="headerlink" title="2. 分析"></a>2. 分析</h2><p>下面是一个辅助基类、便于减少篇幅（为了简单起见，后文中的所有函数调用并未检查返回的错误情况）：<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">ConditionBase</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">ConditionBase</span>()</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">pthread_mutex_init</span>(&amp;mutex_, <span class="literal">NULL</span>);</span><br><span class="line">        <span class="built_in">pthread_cond_init</span>(&amp;cond_, <span class="literal">NULL</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ~<span class="built_in">ConditionBase</span>()</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">pthread_mutex_destroy</span>(&amp;mutex_);</span><br><span class="line">        <span class="built_in">pthread_cond_destroy</span>(&amp;cond_);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="keyword">pthread_mutex_t</span>  mutex_;</span><br><span class="line">    <span class="keyword">pthread_cond_t</span>   cond_;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></p>
+<h3 id="2-1-1-版本一"><a href="#2-1-1-版本一" class="headerlink" title="2.1.1 版本一"></a>2.1.1 版本一</h3><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Condition1</span> :</span> <span class="keyword">public</span> ConditionBase</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">wait</span><span class="params">()</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="built_in">pthread_mutex_lock</span>(&amp;mutex_);</span><br><span class="line">        <span class="built_in">pthread_cond_wait</span>(&amp;cond_, &amp;mutex_);</span><br><span class="line">        <span class="built_in">pthread_mutex_unlock</span>(&amp;mutex_);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">wakeup</span><span class="params">()</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="built_in">pthread_cond_signal</span>(&amp;cond_);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>错误，这种情况有可能丢失事件。当signal发生在wait之前，就会丢失这次signal事件。如下图</p>
+<p><img src="/images/blog-condition_variable_1.png" alt=""><br><span id="more"></span></p>
+<h3 id="2-1-2-版本二"><a href="#2-1-2-版本二" class="headerlink" title="2.1.2 版本二"></a>2.1.2 版本二</h3><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Condition2</span> :</span> <span class="keyword">public</span> ConditionBase</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">wait</span><span class="params">()</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="built_in">pthread_mutex_lock</span>(&amp;mutex_);</span><br><span class="line">        <span class="built_in">pthread_cond_wait</span>(&amp;cond_, &amp;mutex_);</span><br><span class="line">        <span class="built_in">pthread_mutex_unlock</span>(&amp;mutex_);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">wakeup</span><span class="params">()</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="built_in">pthread_mutex_lock</span>(&amp;mutex_);</span><br><span class="line">        <span class="built_in">pthread_cond_signal</span>(&amp;cond_);</span><br><span class="line">        <span class="built_in">pthread_mutex_unlock</span>(&amp;mutex_);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>错误，同情况一一样有可能丢失事件。当signal事件发生在wait之前就会丢失signal事件。如下图</p>
+<p><img src="/images/blog-condition_variable_2.png" alt=""></p>
+<h3 id="2-1-3-版本三"><a href="#2-1-3-版本三" class="headerlink" title="2.1.3 版本三"></a>2.1.3 版本<strong>三</strong></h3><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Condition3</span> :</span> <span class="keyword">public</span> ConditionBase</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">Condition3</span>()</span><br><span class="line">        : <span class="built_in">signal_</span>(<span class="literal">false</span>)</span><br><span class="line">    &#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">wait</span><span class="params">()</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="built_in">pthread_mutex_lock</span>(&amp;mutex_);</span><br><span class="line">        <span class="keyword">if</span> (!signal_)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="built_in">pthread_cond_wait</span>(&amp;cond_, &amp;mutex_);</span><br><span class="line">        &#125;</span><br><span class="line">        signal_ = <span class="literal">false</span>;</span><br><span class="line">        <span class="built_in">pthread_mutex_unlock</span>(&amp;mutex_);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">wakeup</span><span class="params">()</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="built_in">pthread_mutex_lock</span>(&amp;mutex_);</span><br><span class="line">        signal_ = <span class="literal">true</span>;</span><br><span class="line">        <span class="built_in">pthread_cond_signal</span>(&amp;cond_);</span><br><span class="line">        <span class="built_in">pthread_mutex_unlock</span>(&amp;mutex_);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="keyword">bool</span> signal_;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>错误。引入了bool变量来检查状态，但是遇到spurious wakeup仍然会发生错误。</p>
+<p>什么是spurious wakeup？wikipedia中是这样说的：</p>
+<blockquote>
+<p>spurious wakeup describes a complication in the use of condition variables as provided by certain multithreading apis such as posix threads and the windows api. even after a condition variable appears to have been signaled from a waiting thread’s point of view, the condition that was awaited may still be false. one of the reasons for this is a spurious wakeup; that is, a thread might be awoken from its waiting state even though no thread signaled the condition variable.</p>
+</blockquote>
+<p>也就是说一次signal调用唤醒了2个或者2个以上的waiting中的线程，这种现象就是spurious wakeup，虚假唤醒。</p>
+<p>apue上这样说：</p>
+<blockquote>
+<p>posix规范为了简化实现，允许pthread_cond_signal在实现的时候可以唤醒不止一个线程。</p>
+</blockquote>
+<p>在发生的spurious wakeup时候，waiting线程被意外的唤醒，然后到真正signal的时候，waiting线程在之前已经spurious wakeup唤醒了，这样就会造成不易debug的错误。如下图</p>
+<p><img src="/images/blog-condition_variable_3.png" alt=""></p>
+<h3 id="2-1-4-版本四"><a href="#2-1-4-版本四" class="headerlink" title="2.1.4 版本四"></a>2.1.4 版本四</h3><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Condition4</span> :</span> <span class="keyword">public</span> ConditionBase</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">Condition4</span>()</span><br><span class="line">        : <span class="built_in">signal_</span>(<span class="literal">false</span>)</span><br><span class="line">    &#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">wait</span><span class="params">()</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="built_in">pthread_mutex_lock</span>(&amp;mutex_);</span><br><span class="line">        <span class="keyword">while</span> (!signal_)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="built_in">pthread_cond_wait</span>(&amp;cond_, &amp;mutex_);</span><br><span class="line">        &#125;</span><br><span class="line">        signal_ = <span class="literal">false</span>;</span><br><span class="line">        <span class="built_in">pthread_mutex_unlock</span>(&amp;mutex_);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">wakeup</span><span class="params">()</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="built_in">pthread_mutex_lock</span>(&amp;mutex_);</span><br><span class="line">        signal_ = <span class="literal">true</span>;</span><br><span class="line">        <span class="built_in">pthread_cond_signal</span>(&amp;cond_);</span><br><span class="line">        <span class="built_in">pthread_mutex_unlock</span>(&amp;mutex_);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="keyword">bool</span> signal_;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>正确。这个是推荐用法，apue, unp，man手册中都是这种用法，在wait上用while循环而不是if就可以正确处理spurious wakeup情况了。当发生spurious wakeup时，wait被意料之外的唤醒，但是循环条件并没有改变，于是循环继续执行pthread_cond_wait，然后继续进入wait，等待被正确的唤醒。</p>
+<h3 id="2-1-5-版本五"><a href="#2-1-5-版本五" class="headerlink" title="2.1.5 版本五"></a>2.1.5 版本五</h3><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Condition5</span> :</span> <span class="keyword">public</span> ConditionBase</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">Condition5</span>()</span><br><span class="line">        : <span class="built_in">signal_</span>(<span class="literal">false</span>)</span><br><span class="line">    &#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">wait</span><span class="params">()</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="built_in">pthread_mutex_lock</span>(&amp;mutex_);</span><br><span class="line">        <span class="keyword">while</span> (!signal_)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="built_in">pthread_cond_wait</span>(&amp;cond_, &amp;mutex_);</span><br><span class="line">        &#125;</span><br><span class="line">        signal_ = <span class="literal">false</span>;</span><br><span class="line">        <span class="built_in">pthread_mutex_unlock</span>(&amp;mutex_);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">wakeup</span><span class="params">()</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="built_in">pthread_mutex_lock</span>(&amp;mutex_);</span><br><span class="line">        signal_ = <span class="literal">true</span>;</span><br><span class="line">        <span class="built_in">pthread_mutex_unlock</span>(&amp;mutex_);</span><br><span class="line">        <span class="built_in">pthread_cond_signal</span>(&amp;cond_);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="keyword">bool</span> signal_;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>正确。版本五与版本四的唯一区别就是在唤醒的时候先解锁再调用signal发起唤醒。这么做不会有错误，但是可能有较大几率会使线程调度不在最理想状态，例如在wakeup调用中的解锁以后，调用signal以前，系统调度发生线程切换，使得signal没有在第一时间被发出。</p>
+<p>这是在stackoverflow的一个帖子中的说法：<a target="_blank" rel="noopener" href="http://stackoverflow.com/questions/4544234/calling-pthread-cond-signal-without-locking-mutex">http://stackoverflow.com/questions/4544234/calling-pthread-cond-signal-without-locking-mutex</a></p>
+<blockquote>
+<p>Note that you can actually move the pthread_cond_signal() itself after the pthread_mutex_unlock(), but this can result in less optimal scheduling of threads, and you’ve necessarily locked the mutex already in this code path due to changing the condition itself.</p>
+</blockquote>
+<h3 id="2-1-6-版本六"><a href="#2-1-6-版本六" class="headerlink" title="2.1.6 版本六"></a>2.1.6 版本六</h3><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Condition6</span> :</span> <span class="keyword">public</span> ConditionBase</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">Condition6</span>()</span><br><span class="line">        : <span class="built_in">signal_</span>(<span class="literal">false</span>)</span><br><span class="line">    &#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">wait</span><span class="params">()</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="built_in">pthread_mutex_lock</span>(&amp;mutex_);</span><br><span class="line">        <span class="keyword">while</span> (!signal_)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="built_in">pthread_cond_wait</span>(&amp;cond_, &amp;mutex_);</span><br><span class="line">        &#125;</span><br><span class="line">        signal_ = <span class="literal">false</span>;</span><br><span class="line">        <span class="built_in">pthread_mutex_unlock</span>(&amp;mutex_);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">wakeup</span><span class="params">()</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="built_in">pthread_mutex_lock</span>(&amp;mutex_);</span><br><span class="line">        <span class="built_in">pthread_cond_signal</span>(&amp;cond_);</span><br><span class="line">        signal_ = <span class="literal">true</span>;</span><br><span class="line">        <span class="built_in">pthread_mutex_unlock</span>(&amp;mutex_);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="keyword">bool</span> signal_;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>正确，版本六与版本四的区别状态的改变和发起signal唤醒信号的顺序互换了，由于整个wakeup过程都在mutex的包含之下，所以并没有影响。但是个人更推荐版本四，因为更符合逻辑，不然apue和unp也不会都用版本四的写法顺序了:)</p>
+<h3 id="2-1-7-版本七"><a href="#2-1-7-版本七" class="headerlink" title="2.1.7 版本七"></a>2.1.7 版本七</h3><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Condition7</span> :</span> <span class="keyword">public</span> ConditionBase</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">Condition7</span>()</span><br><span class="line">        : <span class="built_in">signal_</span>(<span class="literal">false</span>)</span><br><span class="line">    &#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">wait</span><span class="params">()</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="built_in">pthread_mutex_lock</span>(&amp;mutex_);</span><br><span class="line">        <span class="keyword">while</span> (!signal_)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="built_in">pthread_cond_wait</span>(&amp;cond_, &amp;mutex_);</span><br><span class="line">        &#125;</span><br><span class="line">        signal_ = <span class="literal">false</span>;</span><br><span class="line">        <span class="built_in">pthread_mutex_unlock</span>(&amp;mutex_);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">wakeup</span><span class="params">()</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="built_in">pthread_mutex_lock</span>(&amp;mutex_);</span><br><span class="line">        signal_ = <span class="literal">true</span>;</span><br><span class="line">        <span class="built_in">pthread_cond_broadcast</span>(&amp;cond_);</span><br><span class="line">        <span class="built_in">pthread_mutex_unlock</span>(&amp;mutex_);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="keyword">bool</span> signal_;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>正确。与版本四的区别是这里用了broadcast，而不是signal。对于这种只有一个wait线程的时候，是没有问题的。但是当有多个wait线程的时候，使用broadcast就把所有wait线程都唤醒了。</p>
+<p>另外，当我们使用条件变量cond实现事件等待器的时候，就要用broadcast而不是signal了，因为当有多个事件挂起在wait调用上等待时，signal只能唤醒其中的一个等待线程，并且我们不能期待它唤醒具体的某一个线程，因为这个是不可控的。</p>
+<h3 id="2-1-8-版本八"><a href="#2-1-8-版本八" class="headerlink" title="2.1.8 版本八"></a>2.1.8 版本八</h3><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Condition8</span> :</span> <span class="keyword">public</span> ConditionBase</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">Condition8</span>()</span><br><span class="line">        : <span class="built_in">signal_</span>(<span class="literal">false</span>)</span><br><span class="line">    &#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">wait</span><span class="params">()</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="built_in">pthread_mutex_lock</span>(&amp;mutex_);</span><br><span class="line">        <span class="keyword">while</span> (!signal_)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="built_in">pthread_cond_wait</span>(&amp;cond_, &amp;mutex_);</span><br><span class="line">        &#125;</span><br><span class="line">        signal_ = <span class="literal">false</span>;</span><br><span class="line">        <span class="built_in">pthread_mutex_unlock</span>(&amp;mutex_);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">wakeup</span><span class="params">()</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        signal_ = <span class="literal">true</span>;</span><br><span class="line">        <span class="built_in">pthread_cond_signal</span>(&amp;cond_);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="keyword">bool</span> signal_;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>错误。存在data race，从而导致有可能丢失事件。当wakeup调用发生在wait调用中的进入while循环之后，调用pthread_cond_wait之前，就会丢失signal事件。如下图</p>
+<p><img src="/images/blog-condition_variable_8.png" alt=""></p>
+<p>另外，在wait调用中，必须用一个mutex同时保护条件状态和cond的pthread_cond_wait的调用，而不能用2个mutex，一个保护条件状态，一个保护pthread_cond_wait，pthread_cond_signal的调用。</p>
+<p>这样仍然会出现race condition。比如先发生wait调用，保护条件的mutex加锁、检查条件、解锁，然后切换线程调用wakeup发送signal信号，再切回wait线程，保护cond的mutex加锁、进入pthread_cond_wait的waiting状态中，从而丢失了之前的signal事件。</p>
+<h2 id="3-总结"><a href="#3-总结" class="headerlink" title="3. 总结"></a>3. 总结</h2><p>使用条件变量，调用signal/broadcast的时候，无法知道是否已经有线程等在wait上了。因此，一般要先改变条件状态，然后再发送signal/broadcast信号。然后在wait调用线程上先检查条件状态，只有当条件状态为假的时候才进入pthread_cond_wait进行等待，从而防止丢失signal/broadcast事件。并且检查条件、pthread_cond_wait，修改条件、signal/broadcast都要在同一个mutex的保护下进行。</p>
+<h2 id="4-参考文献"><a href="#4-参考文献" class="headerlink" title="4. 参考文献"></a>4. 参考文献</h2><ol>
+<li>W.Richard Stevens. <a target="_blank" rel="noopener" href="http://book.douban.com/subject/25900403/">UNIX环境高级编程(第3版), 人民邮电出版社, 2014</a></li>
+<li>Wikipedia. <a target="_blank" rel="noopener" href="http://en.wikipedia.org/wiki/spurious_wakeup">Spurious_wakeup</a></li>
+<li>stackoverflow. <a target="_blank" rel="noopener" href="http://stackoverflow.com/questions/4544234/calling-pthread-cond-signal-without-locking-mutex">Calling pthread_cond_signal without locking mutex</a><br>（完）</li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2015/01/09/year-end-summary-of-2014/" rel="prev" title="2014年终总结">
+      <i class="fa fa-chevron-left"></i> 2014年终总结
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2015/01/24/pointer-compare/" rel="next" title="浅谈指针的比较">
+      浅谈指针的比较 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">1. 前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E5%88%86%E6%9E%90"><span class="nav-number">2.</span> <span class="nav-text">2. 分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-1-%E7%89%88%E6%9C%AC%E4%B8%80"><span class="nav-number">2.1.</span> <span class="nav-text">2.1.1 版本一</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-2-%E7%89%88%E6%9C%AC%E4%BA%8C"><span class="nav-number">2.2.</span> <span class="nav-text">2.1.2 版本二</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-3-%E7%89%88%E6%9C%AC%E4%B8%89"><span class="nav-number">2.3.</span> <span class="nav-text">2.1.3 版本三</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-4-%E7%89%88%E6%9C%AC%E5%9B%9B"><span class="nav-number">2.4.</span> <span class="nav-text">2.1.4 版本四</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-5-%E7%89%88%E6%9C%AC%E4%BA%94"><span class="nav-number">2.5.</span> <span class="nav-text">2.1.5 版本五</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-6-%E7%89%88%E6%9C%AC%E5%85%AD"><span class="nav-number">2.6.</span> <span class="nav-text">2.1.6 版本六</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-7-%E7%89%88%E6%9C%AC%E4%B8%83"><span class="nav-number">2.7.</span> <span class="nav-text">2.1.7 版本七</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-8-%E7%89%88%E6%9C%AC%E5%85%AB"><span class="nav-number">2.8.</span> <span class="nav-text">2.1.8 版本八</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E6%80%BB%E7%BB%93"><span class="nav-number">3.</span> <span class="nav-text">3. 总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE"><span class="nav-number">4.</span> <span class="nav-text">4. 参考文献</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Li Yuan"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">Li Yuan</p>
+  <div class="site-description" itemprop="description">种一棵树最好的时间是十年前，其次是现在</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">29</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="mailto:liyuan989@gmail.com" title="Email → mailto:liyuan989@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>Email</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://cn.linkedin.com/in/liyuan989" title="Linkedin → https:&#x2F;&#x2F;cn.linkedin.com&#x2F;in&#x2F;liyuan989" rel="noopener" target="_blank"><i class="fab fa-linkedin fa-fw"></i>Linkedin</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/liyuan989" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;liyuan989" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/origin-989" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;origin-989" rel="noopener" target="_blank"><i class="fa fa-globe fa-fw"></i>Zhihu</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="http://weibo.com/liyuan989" title="Weibo → http:&#x2F;&#x2F;weibo.com&#x2F;liyuan989" rel="noopener" target="_blank"><i class="fab fa-weibo fa-fw"></i>Weibo</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2014 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Li Yuan</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

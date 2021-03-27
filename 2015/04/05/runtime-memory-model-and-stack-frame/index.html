@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico">
+  <link rel="mask-icon" href="/favicon.ico" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"originlee.com","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"right","display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="我们知道程序在运行时的机器码（程序代码）、栈、堆都是在内存（存储器）上的一段空间，然后CPU依着一定的规则读取、翻译指令，「指挥」计算机如何存取内存上的数据。本文以Linux上的C程序为例，简单介绍一下这其中的运行机制。 内存布局 每个Linux程序都有一个运行时的内存布局，主要结构如上图所示。在32位的Linux系统中，一个进程的虚拟地址空间最多为4GB，其中1GB（一般为地址空间的高位1G空间">
+<meta property="og:type" content="article">
+<meta property="og:title" content="运行时内存布局与栈帧结构">
+<meta property="og:url" content="http://originlee.com/2015/04/05/runtime-memory-model-and-stack-frame/index.html">
+<meta property="og:site_name" content="Less is more">
+<meta property="og:description" content="我们知道程序在运行时的机器码（程序代码）、栈、堆都是在内存（存储器）上的一段空间，然后CPU依着一定的规则读取、翻译指令，「指挥」计算机如何存取内存上的数据。本文以Linux上的C程序为例，简单介绍一下这其中的运行机制。 内存布局 每个Linux程序都有一个运行时的内存布局，主要结构如上图所示。在32位的Linux系统中，一个进程的虚拟地址空间最多为4GB，其中1GB（一般为地址空间的高位1G空间">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://originlee.com/images/blog-runtime_memory_model.png">
+<meta property="og:image" content="http://originlee.com/images/blog-stack_frame.png">
+<meta property="article:published_time" content="2015-04-05T15:56:34.000Z">
+<meta property="article:modified_time" content="2019-03-22T14:56:20.792Z">
+<meta property="article:author" content="Li Yuan">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://originlee.com/images/blog-runtime_memory_model.png">
+
+<link rel="canonical" href="http://originlee.com/2015/04/05/runtime-memory-model-and-stack-frame/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>运行时内存布局与栈帧结构 | Less is more</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Less is more</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://originlee.com/2015/04/05/runtime-memory-model-and-stack-frame/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="Li Yuan">
+      <meta itemprop="description" content="种一棵树最好的时间是十年前，其次是现在">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Less is more">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          运行时内存布局与栈帧结构
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2015-04-05 23:56:34" itemprop="dateCreated datePublished" datetime="2015-04-05T23:56:34+08:00">2015-04-05</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" itemprop="url" rel="index"><span itemprop="name">操作系统</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>我们知道程序在运行时的机器码（程序代码）、栈、堆都是在内存（存储器）上的一段空间，然后CPU依着一定的规则读取、翻译指令，「指挥」计算机如何存取内存上的数据。本文以Linux上的C程序为例，简单介绍一下这其中的运行机制。</p>
+<h2 id="内存布局"><a href="#内存布局" class="headerlink" title="内存布局"></a>内存布局</h2><p><img src="/images/blog-runtime_memory_model.png" alt=""></p>
+<p>每个Linux程序都有一个运行时的内存布局，主要结构如上图所示。在32位的Linux系统中，一个进程的虚拟地址空间最多为4GB，其中1GB（一般为地址空间的高位1G空间）是为内核保留的，剩下的3GB可为用户态所用。代码段总是从地址0x08048000初开始。数据段是在接下来的一个4KB对齐的地址处。运行时的堆在读/写段之后接下来第一个4KB对齐的地址处，并通过调用glibc库函数malloc往上增长。还有一段是为共享库保留的。用户栈总是从最大的合法用户地址开始，向下增长（向低地址方向增长）。从栈的上部开始的段是为内核的代码和数据保留的。</p>
+<ul>
+<li>.init：在该段定义了一个小函数_init，程序的初始化代码会调用它。</li>
+<li>.text：已编译程序的机器代码。</li>
+<li>.rodata：只读数据。比如字符串字面值、switch的跳转表、C++中的虚函数表都存放此段。</li>
+<li>.data：已初始化的全局变量。</li>
+<li>.bss：未初始化的全局变量。</li>
+<li>运行时堆：一般通过调用glibc库函数malloc往上增长。</li>
+<li>共享库映射区域：一般是glibc或者其他动态链接库的映射区域，如printf等等。</li>
+<li>用户栈：维持程序运行时的栈帧结构。</li>
+<li>内核段：为内核态的代码和数据所保留的地址空间。<span id="more"></span>
+</li>
+</ul>
+<p>程序运行的时候是需要加载器加载的，当加载器运行时它创建如上图所示的内存布局映像，然后在可执行文件的段头部表的指导下，加载器将可执行文件的相关内容拷贝到代码和数据段。接下来加载器跳转到程序的入口点，也就是符号_start的地址。在_start地址处的基本调用序列如下：<br><figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="number">0x080480c0</span> &lt;_start&gt;:            <span class="comment">/* Entry point int .text */</span></span><br><span class="line">    call __libc_init_first      <span class="comment">/* Startup code in .text */</span></span><br><span class="line">    call _init                  <span class="comment">/* Startup code in .text */</span></span><br><span class="line">    call atexit                 <span class="comment">/* Startup code in .text */</span></span><br><span class="line">    call main                   <span class="comment">/* Application main routine */</span></span><br><span class="line">    call _exit                  <span class="comment">/* Returns control to OS */</span></span><br></pre></td></tr></table></figure><br>在从.text段中调用了初始化例程后，启动代码调用了atexit函数，这个程序附加了一系列在应用程序正常中止时应该调用的函数。然后启动代码调用main函数执行用户代码，在用户代码返回后，exit函数运行atexit所注册的函数，然后运行_exit函数将控制返回给操作系统。</p>
+<p>那么加载器是如何工作的呢？操作系统中的每个程序都是运行在一个进程上下文中，有自己的虚拟地址空间。当外壳（如shell）运行一个程序时，父外壳进程fork一个子进程，然后调用exec函数，exec函数会通过系统调用启动加载器。加载器删除子进程现有的虚拟地址空间内存布局，并创建一组新的代码、数据、堆和栈段。然后通过将虚拟地址空间中的页映射到可执行文件的页大小的片，新的代码和数据段被初始化为可执行文件的内容。最后加载器跳转到_start地址处，调用上文所述的调用序列。除了一些头部信息，在加载的过程中没有任何从磁盘（硬盘）到存储器（内存）的数据拷贝，直到CPU引用一个被映射的虚拟页才会进行拷贝，此时，操作系统的页面调度机制自动将页面从磁盘（硬盘）拷贝到存储器（内存）。</p>
+<h2 id="sbrk与mmap"><a href="#sbrk与mmap" class="headerlink" title="sbrk与mmap"></a>sbrk与mmap</h2><p>运行时堆一般是通过调用malloc向上（高地址）增长，如上图所示具体是通过sbrk函数移动内核中的一个叫做brk的指针来控制堆的。但是在实际的Linux中并不是所有通过malloc申请的动态内存都是通过sbrk增长堆来申请空间的。具体策略是：</p>
+<ul>
+<li>当malloc申请的内存小于128KB时，是通过sbrk增长运行时堆来获取内存空间的。</li>
+<li>当malloc申请的内存大于128KB时，是通过mmap函数进行系统映射获取内存空间的。</li>
+</ul>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;unistd.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/mman.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span>* <span class="title">mmap</span><span class="params">(<span class="keyword">void</span>* start, <span class="keyword">size_t</span> length, <span class="keyword">int</span> prot, <span class="keyword">int</span> flags, <span class="keyword">int</span> fd, <span class="keyword">off_t</span> offset)</span></span></span><br></pre></td></tr></table></figure>
+<p>mmap函数要求内核创建一个新的虚拟存储器区域，最好是从地址start开始的一个区域，并将文件描述符fd指定的对象的一个连续的片（chunk）映射到这个新的区域。连续的对象片大小为length字节，从距离文件开始处偏移量为offset字节的地方开始。start地址仅仅是一个暗示，通常被定义为NULL。自Linux内核2.6开始，在32位系统上，一般是从靠近3GB地址处的用户栈的下方开始往下（低地址）映射。</p>
+<p>参数prot包含描述新映射的虚拟存储器区域的访问权限位（在相应区域结构中的vm_prot位）：</p>
+<ul>
+<li>PROT_EXEC：这个区域内的页面由可以被CPU执行的指令组成。</li>
+<li>PROT_READ：这个区域内的页面可读。</li>
+<li>PROT_WRITE：这个区域内的页面可写。</li>
+<li>PROT_NONE：这个区域内的页面不能被访问。</li>
+</ul>
+<p>参数flags由描述被映射对象类型的位组成：</p>
+<ul>
+<li>MAP_ANON：表示被映射的对象是一个匿名对象，而相应的虚拟页面是请求二进制零的。</li>
+<li>MAP_PRIVATE：表示被映射的对象是一个私有的、写时拷贝的对象。</li>
+<li>MAP_SHARED：表示是一个共享对象。</li>
+</ul>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;unistd.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/mman.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span>* <span class="title">munmap</span><span class="params">(<span class="keyword">void</span>* start, <span class="keyword">size_t</span> length)</span></span></span><br></pre></td></tr></table></figure>
+<p>就像malloc与free一样，相对应的mmap映射的内存区域可以用munmap释放。需要注意的是munmap不会影响到被映射的对象，也就是说不会使映射区的内容写到磁盘（硬盘）文件上。</p>
+<h2 id="X86的栈帧结构"><a href="#X86的栈帧结构" class="headerlink" title="X86的栈帧结构"></a>X86的栈帧结构</h2><p>在上文的运行时内存布局中谈到了用户栈就是维持程序运行时的栈帧结构，在X86架构下，其栈帧结构大致如下图：</p>
+<p><img src="/images/blog-stack_frame.png" alt=""></p>
+<p>IA32程序使用栈来支持过程调用。机器用栈来传递过程参数、存储返回信息、保存寄存器用于以后恢复，以及本地存储。为单个过程分配的那部分叫做栈帧。如上图所示，栈帧的最顶端以两个指针为分界线，寄存器%ebp为帧指针，寄存器%esp为栈指针。当程序执行时，栈指针可以移动，因此大多数信息的访问都是相对于栈指针的。</p>
+<p>假设过程P（调用者）调用过程Q（被调用者），Q的参数放在P的栈帧中。另外，当P调用Q时，P中的返回地址被压入栈中，形成P的栈帧末尾。返回地址就是当程序从Q返回时应该继续执行的地方。Q的栈帧从保存帧指针（%esp）开始，后面是保存的其他寄存器的值。</p>
+<p>过程Q也用栈来保存其他不能存放在寄存器中的局部变量，这样做的主要原因是：</p>
+<ul>
+<li>没有足够多的寄存器存放所有的局部变量。</li>
+<li>有些局部变量是数组、结构体或者如C++中的对象，因此必须通过数组，结构体或者对象引用来访问。</li>
+<li>有些局部变量是左值，如果用户代码对一个左值进行了取地址操作，就必须得为这样的局部变量生成一个地址。</li>
+</ul>
+<p>另外，Q会用栈帧来存放它调用的其他过程的参数，即函数的实参。如上图所示，在被调用的时候，第一个参数存放在相对于%ebp偏移量为8的位置，剩下的参数（假设参数数据类型长度为4字节）存储在后续的4字节内存中，所以参数i就在相对于%ebp偏移量为4+4i的地方。较大的参数（如结构体或者对象）需要更大的栈上空间。</p>
+<p>正如上文讲的那样，栈向低地址方向增长，栈指针%esp指向栈顶元素，可以利用pushl将数据存入栈中并利用popl从栈中取出。将栈指针的值适当减小可以给数据分配空间，相应的可以通过增加栈指针的值来释放空间。</p>
+<h2 id="X64的变化"><a href="#X64的变化" class="headerlink" title="X64的变化"></a>X64的变化</h2><p>在IA32架构的X86系统上，由于指针长度为32位只能寻址4GB的地址空间，内存很有限。到了X64时代，指针的长度变为64位，也就是可以寻址0 - (2^64-1)的地址空间了。而且相对于X86，不仅原来X86上的所有寄存器可存放的数据长度由的32位变成了64位，而且另外增加了8个通用目的寄存器。</p>
+<p>主要有这些变化：</p>
+<ul>
+<li>没有帧指针。寄存器%rbp变为了普通的通用目的寄存器。作为代替，对栈位置的引用相对于栈指针。大多数函数在调用开始时分配所需的整个栈存储空间，并保持栈指针指向固定的位置。</li>
+<li>由于增加了通用目的寄存器的缘故，许多函数不需要栈帧。只有那些不能将所有的局部变量都存放在寄存器中的函数才需要在栈上分配空间。</li>
+<li>函数传参的实参（最多是前6个）通过寄存器传递，而不是在栈上。这消除了在栈上存储和检索值的开销。</li>
+<li>函数最多可以访问超过当前栈指针%rsp值128个字节的栈上空间（地址低于当前栈指针的值）。这就允许了一些函数将信息存储在栈上而无需修改栈指针。</li>
+<li>callq指令将一个64位的返回地址压栈，而不是32位。</li>
+</ul>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><ol>
+<li>Randal E.Bryant, David O’Hallaron. <a target="_blank" rel="noopener" href="http://book.douban.com/subject/5333562/">深入理解计算机系统(第2版). 机械工业出版社, 2010</a></li>
+<li>W.Richard Stevens. <a target="_blank" rel="noopener" href="http://book.douban.com/subject/25900403/">UNIX环境高级编程(第3版), 人民邮电出版社, 2014</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2015/03/27/difference-between-return-and-exit-in-cxx/" rel="prev" title="C++中return与exit的区别">
+      <i class="fa fa-chevron-left"></i> C++中return与exit的区别
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2015/04/08/influence-of-main-threads-exiting-to-child-thread/" rel="next" title="主线程退出对子线程的影响">
+      主线程退出对子线程的影响 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%86%85%E5%AD%98%E5%B8%83%E5%B1%80"><span class="nav-number">1.</span> <span class="nav-text">内存布局</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#sbrk%E4%B8%8Emmap"><span class="nav-number">2.</span> <span class="nav-text">sbrk与mmap</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#X86%E7%9A%84%E6%A0%88%E5%B8%A7%E7%BB%93%E6%9E%84"><span class="nav-number">3.</span> <span class="nav-text">X86的栈帧结构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#X64%E7%9A%84%E5%8F%98%E5%8C%96"><span class="nav-number">4.</span> <span class="nav-text">X64的变化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE"><span class="nav-number">5.</span> <span class="nav-text">参考文献</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Li Yuan"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">Li Yuan</p>
+  <div class="site-description" itemprop="description">种一棵树最好的时间是十年前，其次是现在</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">29</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="mailto:liyuan989@gmail.com" title="Email → mailto:liyuan989@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>Email</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://cn.linkedin.com/in/liyuan989" title="Linkedin → https:&#x2F;&#x2F;cn.linkedin.com&#x2F;in&#x2F;liyuan989" rel="noopener" target="_blank"><i class="fab fa-linkedin fa-fw"></i>Linkedin</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/liyuan989" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;liyuan989" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/origin-989" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;origin-989" rel="noopener" target="_blank"><i class="fa fa-globe fa-fw"></i>Zhihu</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="http://weibo.com/liyuan989" title="Weibo → http:&#x2F;&#x2F;weibo.com&#x2F;liyuan989" rel="noopener" target="_blank"><i class="fab fa-weibo fa-fw"></i>Weibo</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2014 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Li Yuan</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

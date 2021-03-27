@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico">
+  <link rel="mask-icon" href="/favicon.ico" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"originlee.com","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"right","display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="本文整理自之前我在公司内部培训上的演讲ppt  编译概要阶段：  词法分析 语法分析 语义分析 代码优化 代码生成  划分：  编译前端，包括词法分析、语法分析、语义分析 编译后端，包括代码优化、代码生成  流程：">
+<meta property="og:type" content="article">
+<meta property="og:title" content="编译与链接">
+<meta property="og:url" content="http://originlee.com/2016/04/09/compile-and-link/index.html">
+<meta property="og:site_name" content="Less is more">
+<meta property="og:description" content="本文整理自之前我在公司内部培训上的演讲ppt  编译概要阶段：  词法分析 语法分析 语义分析 代码优化 代码生成  划分：  编译前端，包括词法分析、语法分析、语义分析 编译后端，包括代码优化、代码生成  流程：">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://originlee.com/images/compile_component.PNG">
+<meta property="og:image" content="http://originlee.com/images/DFA.PNG">
+<meta property="og:image" content="http://originlee.com/images/concatenation.PNG">
+<meta property="og:image" content="http://originlee.com/images/select.PNG">
+<meta property="og:image" content="http://originlee.com/images/repeat.PNG">
+<meta property="og:image" content="http://originlee.com/images/ast.PNG">
+<meta property="og:image" content="http://originlee.com/images/example_of_symbo_table.PNG">
+<meta property="og:image" content="http://originlee.com/images/symbol_table.PNG">
+<meta property="og:image" content="http://originlee.com/images/target_file.PNG">
+<meta property="og:image" content="http://originlee.com/images/static_link.PNG">
+<meta property="og:image" content="http://originlee.com/images/executable_target_file.PNG">
+<meta property="og:image" content="http://originlee.com/images/dynamic_link.PNG">
+<meta property="article:published_time" content="2016-04-09T13:27:17.000Z">
+<meta property="article:modified_time" content="2019-03-22T14:50:50.448Z">
+<meta property="article:author" content="Li Yuan">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://originlee.com/images/compile_component.PNG">
+
+<link rel="canonical" href="http://originlee.com/2016/04/09/compile-and-link/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>编译与链接 | Less is more</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Less is more</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://originlee.com/2016/04/09/compile-and-link/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="Li Yuan">
+      <meta itemprop="description" content="种一棵树最好的时间是十年前，其次是现在">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Less is more">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          编译与链接
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2016-04-09 21:27:17" itemprop="dateCreated datePublished" datetime="2016-04-09T21:27:17+08:00">2016-04-09</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%BC%96%E8%AF%91%E5%8E%9F%E7%90%86/" itemprop="url" rel="index"><span itemprop="name">编译原理</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>本文整理自之前我在公司内部培训上的演讲ppt</p>
+</blockquote>
+<h1 id="编译概要"><a href="#编译概要" class="headerlink" title="编译概要"></a>编译概要</h1><p>阶段：</p>
+<ul>
+<li>词法分析</li>
+<li>语法分析</li>
+<li>语义分析</li>
+<li>代码优化</li>
+<li>代码生成</li>
+</ul>
+<p>划分：</p>
+<ul>
+<li>编译前端，包括词法分析、语法分析、语义分析</li>
+<li>编译后端，包括代码优化、代码生成</li>
+</ul>
+<p>流程：</p>
+<p><img src="/images/compile_component.PNG" alt=""></p>
+<span id="more"></span>
+<h1 id="词法分析"><a href="#词法分析" class="headerlink" title="词法分析"></a>词法分析</h1><p>将输入的字符串流转换为特定的token</p>
+<p>识别字符组合的过程</p>
+<ul>
+<li>标识符</li>
+<li>关键字</li>
+<li>数字</li>
+<li>操作符</li>
+<li>忽略注释</li>
+</ul>
+<p>直接构造DFA（确定性有限自动机）</p>
+<ul>
+<li>直接，适合暴力手写词法分析</li>
+<li>复杂的词法结构不易直接构造出来</li>
+</ul>
+<p>从正则表达式到NFA（非确定性有限自动机），再从NFA构造DFA</p>
+<ul>
+<li>复杂情况下适合使用，因NFA容易构造，但需编写特定算法(例如子集构造)从NFA构造DFA</li>
+<li>词法分析生成工具(如Lex)</li>
+<li>正则表达式引擎</li>
+</ul>
+<p>DFA:</p>
+<p><img src="/images/DFA.PNG" alt=""></p>
+<p>NFA:</p>
+<ul>
+<li>并置</li>
+</ul>
+<p><img src="/images/concatenation.PNG" alt=""></p>
+<ul>
+<li>选择</li>
+</ul>
+<p><img src="/images/select.PNG" alt=""></p>
+<ul>
+<li>重复</li>
+</ul>
+<p><img src="/images/repeat.PNG" alt=""></p>
+<h1 id="语法分析"><a href="#语法分析" class="headerlink" title="语法分析"></a>语法分析</h1><p>将token流转换成语句，然后根据语句构造抽象语法树（AST）</p>
+<p>例如if (bool_expression) {statement }就是简单的if语句，构成它所需要的token有关键字if，符号(，表达式，符号)，符号{，语句statement，符号}。而这里表达式和语句又由token流组成，丢弃掉后续过程不关心的符号( ){}，然后再由这些token及相关信息构造抽象语法树</p>
+<h2 id="乔姆斯基谱系"><a href="#乔姆斯基谱系" class="headerlink" title="乔姆斯基谱系"></a>乔姆斯基谱系</h2><p>乔姆斯基谱系分为4层：</p>
+<ul>
+<li>0型文法，无限制文法，该类型的文法能够产生所有可被图灵机识别的语言</li>
+<li>1型文法，上下文相关文法，生成上下文相关语言。这种文法的产生式规则如αAβ-&gt; αγβ一样的形式。这里的A是非终结符，而α、β、γ是包含非终结符和终结符的字串，α、β可以是空串，但γ不能是空串，该文法也可以包含规则S-&gt; ε，但此时文法的任何产生式都不能在右侧包含S。这种文法规定的语言可以被线性有界非确定性自动机接受</li>
+<li>2型文法，上下文无关文法，生成上下文无关语言。这种文法的产生式规则取如A-&gt; γ一样的形式。这里的A是非终结符，γ是包含非终结符和终结符的字串。这种文法规定的语言可以被下推自动机接受。上下文无关文法是程序设计语言的理论基础</li>
+<li>3型文法，正规文法，生成正规语言。这种文法要求产生式的左侧只能包含一个非终结符，产生式的右侧只能是空串、一个终结符或者一个非终结符后跟一个终结符。如果所有的产生式右侧都不包含初始符号S，规则S -&gt; ε也允许出现。这种文法规定的语言可以被有限自动机接受，也可以通过正则表达式来获得。正规语言通常用来定义检索模式或者程序设计语言中的词法结构</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>文法</th>
+<th>语言</th>
+<th>自动机</th>
+<th>产生式规则</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0-型</td>
+<td>递归可枚举</td>
+<td>图灵机</td>
+<td>α -&gt; β（无限制）</td>
+</tr>
+<tr>
+<td>1-型</td>
+<td>上下文相关语言</td>
+<td>线性有界非确定性图灵机</td>
+<td>αAβ -&gt; αγβ</td>
+</tr>
+<tr>
+<td>2-型</td>
+<td>上下文无关语言</td>
+<td>非确定下推自动机</td>
+<td>A -&gt; γ</td>
+</tr>
+<tr>
+<td>3-型</td>
+<td>正规语言</td>
+<td>有限状态自动机</td>
+<td>A -&gt; αB 或 A -&gt; α</td>
+</tr>
+</tbody>
+</table>
+<p>所有编程语言基本都属于上下文相关文法或者上下文无关文法的范畴，而编译器使用上下文无关文法分析方式 + 语义分析来确定这些语言的文法</p>
+<p>上下文无关文法分析：</p>
+<ul>
+<li>自顶向下分析，包括递归下降、LL(1)、LL(k)等分析方式<ul>
+<li>第一个L从左向右处理输入，第二个L表示最左推导</li>
+<li>递归下降适合手写，并且比较自由，也适合处理复杂的语法结构，目前主流商业编译器使用，如gcc、clang、Visual C++等编译器</li>
+</ul>
+</li>
+<li>自低向上分析，包括LR(1)、LALR(1)等分析方式<ul>
+<li>LR(1)、LALR(1)主要用于语法分析生成器(ParserGenarator)、如yacc(LALR(1))</li>
+</ul>
+</li>
+</ul>
+<p>正规文法，正则表达式所表示的语言属于正规语言，可用于词法分析，如正则表达式-&gt;NFA -&gt; DFA -&gt; token</p>
+<h2 id="递归下降分析"><a href="#递归下降分析" class="headerlink" title="递归下降分析"></a>递归下降分析</h2><p>递归下降分析的概念非常简单，即将一个非终结符A的文法规则看作是识别A的一个过程</p>
+<p>下面是用BNF表示的例子</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">exp → exp addop term | term</span><br><span class="line">addop → + | -</span><br><span class="line">term → term mulop factor | factor</span><br><span class="line">mulop → *</span><br><span class="line">factor → ( exp ) | number</span><br></pre></td></tr></table></figure>
+<p>由于上面的文法用递归下降分析会出现左递归，把其中2个产生式改写成EBNF形式可消除左递归</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">exp → term &#123; addop term &#125;</span><br><span class="line">term → factor &#123; mulop factor &#125;</span><br></pre></td></tr></table></figure>
+<p>处理exp：</p>
+<figure class="highlight pascal"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">exp</span> :</span> syntaxTree;</span><br><span class="line"><span class="keyword">var</span> temp, newtemp : syntaxTree;</span><br><span class="line"><span class="keyword">begin</span></span><br><span class="line">    temp := term;</span><br><span class="line">    <span class="keyword">while</span> token = + <span class="keyword">or</span> token = - <span class="keyword">do</span></span><br><span class="line">        newtemp := makeOpNode(token);</span><br><span class="line">        match(token);</span><br><span class="line">        leftChild(newtemp) := temp;</span><br><span class="line">        rightChild(newtemp) := term;</span><br><span class="line">        temp := newtemp;</span><br><span class="line">    <span class="keyword">end</span> <span class="keyword">while</span>;</span><br><span class="line">    return temp;</span><br><span class="line"><span class="keyword">end</span> exp;</span><br></pre></td></tr></table></figure>
+<p>处理term:</p>
+<figure class="highlight pascal"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">procedure</span> <span class="title">term</span>;</span></span><br><span class="line"><span class="keyword">begin</span></span><br><span class="line">    factor;</span><br><span class="line">    <span class="keyword">while</span> token = * <span class="keyword">do</span></span><br><span class="line">        match(token) ;</span><br><span class="line">        factor ;</span><br><span class="line">    <span class="keyword">end</span> <span class="keyword">while</span> ;</span><br><span class="line"><span class="keyword">end</span> term ;</span><br></pre></td></tr></table></figure>
+<p>处理factor:</p>
+<figure class="highlight pascal"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">procedure</span> <span class="title">factor</span>;</span></span><br><span class="line"><span class="keyword">begin</span></span><br><span class="line">    <span class="keyword">case</span> token <span class="keyword">of</span></span><br><span class="line">    ( : match(();</span><br><span class="line">        exp;</span><br><span class="line">        match());</span><br><span class="line">    number:</span><br><span class="line">        match(number);</span><br><span class="line">    <span class="keyword">else</span> error;</span><br><span class="line">    <span class="keyword">end</span> <span class="keyword">case</span>;</span><br><span class="line"><span class="keyword">end</span> factor;</span><br></pre></td></tr></table></figure>
+<p>下面是一段求n的阶乘的代码:</p>
+<figure class="highlight pascal"><table><tr><td class="code"><pre><span class="line"><span class="keyword">read</span> x; <span class="comment">&#123;input&#125;</span></span><br><span class="line"><span class="keyword">if</span> <span class="number">0</span> &lt; x <span class="keyword">then</span> <span class="comment">&#123;don&#x27;t compute if x &lt;= 0&#125;</span></span><br><span class="line">    fact := <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">repeat</span></span><br><span class="line">        fact := fact * x;</span><br><span class="line">        x := x - <span class="number">1</span></span><br><span class="line">    <span class="keyword">until</span> x = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">write</span> fact <span class="comment">&#123;output factorial of x&#125;</span></span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></figure>
+<p>经过语法分析后生成的抽象语法树:</p>
+<p><img src="/images/ast.PNG" alt=""></p>
+<h1 id="语义分析"><a href="#语义分析" class="headerlink" title="语义分析"></a>语义分析</h1><p>在进行下一步之前，需要对抽象语法树进行分析，如类型检查、类型推导</p>
+<p>在进行语义分析的时候，需要符号表来记录变量以及对应的类型，然后在遍历抽象语法树的时候来进行查询与处理</p>
+<p>语义分析的输入是抽象语法树，输出仍然是抽象语法树</p>
+<h2 id="属性计算"><a href="#属性计算" class="headerlink" title="属性计算"></a>属性计算</h2><p>合成属性</p>
+<ul>
+<li>常量合并、类型计算、类型检查、类型转换</li>
+<li>后序遍历AST</li>
+</ul>
+<p>继承属性</p>
+<ul>
+<li>整数的base值</li>
+<li>前序遍历或者前序/中序遍历的组合</li>
+</ul>
+<p>混合属性</p>
+<ul>
+<li>合成属性依赖于继承（及其其他合成属性），但继承属性不依赖于任何合成属性，那么一遍中序遍历AST计算即可</li>
+<li>其他混合属性可能需要多遍遍历AST</li>
+</ul>
+<h2 id="符号表"><a href="#符号表" class="headerlink" title="符号表"></a>符号表</h2><p>一般实现为hash表或者由hash表为基本元素构成的数据结构，如hash表树/hash表链表</p>
+<p>符号表条目</p>
+<ul>
+<li>Hash link(可选)</li>
+<li>name</li>
+<li>category</li>
+<li>scope level</li>
+<li>type</li>
+<li>other(包括指向函数参数条目的指针，undef是否本模块定义等等)</li>
+</ul>
+<p>嵌套作用域问题可以用scope stack来解决：</p>
+<p><img src="/images/example_of_symbo_table.PNG" alt=""></p>
+<p><img src="/images/symbol_table.PNG" alt=""></p>
+<h1 id="代码优化"><a href="#代码优化" class="headerlink" title="代码优化"></a>代码优化</h1><p>优化来源:</p>
+<ul>
+<li>寄存器分配，同样的代码64位编译比32位快(通用目的寄存器由8个增加到16个，函数调用传参最多可由6个寄存器传参而不需要存放在栈上)</li>
+<li>不必要操作，消除不可达代码</li>
+<li>高代价操作，常量合并、位运算替换普通计算、尾递归转换为循环、循环展开以提高单个cpu内部流水线的并行性</li>
+<li>预测程序的行为</li>
+</ul>
+<p>分类:</p>
+<ul>
+<li>局部优化，如常量合并</li>
+<li>区域优化，如循环展开、循环内常量计算代码移动</li>
+<li>全局优化，如数据流分析、常量传播</li>
+<li>过程间优化，如内联替换</li>
+</ul>
+<h1 id="代码生成"><a href="#代码生成" class="headerlink" title="代码生成"></a>代码生成</h1><p>目标语言</p>
+<ul>
+<li>直接翻译到目标语言</li>
+</ul>
+<p>中间表示(IntermediateRepresentation, IR)</p>
+<ul>
+<li>线性IR<ul>
+<li>堆栈代码，单地址代码，假定操作是存在一个栈中，大多数操作从栈获得操作数，并将其结果入栈</li>
+<li>三地址代码，四元组(操作指令，目标，操作数1，操作数2)</li>
+</ul>
+</li>
+<li>图IR<ul>
+<li>抽象语法树，有向非循环图(共享机制的AST，相同子树只实例化一次并且可能有多个父节点)</li>
+<li>控制流图(基本程序块为节点的有向图)，通过控制流分析对程序中各个基本块之间的控制流建立了模型，数据流分析/指令调度/寄存器分配方面的优化都会用到</li>
+<li>依赖关系图(可能依赖于控制流图)，表示值从创建之处到使用之处的流动，指令调度优化会用到</li>
+<li>调用图，优化跨越过程边界效率低下的问题，主要数据流分析中的过程间分析</li>
+</ul>
+</li>
+</ul>
+<p>机器语言</p>
+<ul>
+<li>直接翻译成机器码</li>
+</ul>
+<h1 id="虚拟机"><a href="#虚拟机" class="headerlink" title="虚拟机"></a>虚拟机</h1><p>寄存器式虚拟机</p>
+<ul>
+<li>表示程序逻辑所需的指令条数较小</li>
+<li>简易实现中数据的移动拷贝次数较少</li>
+<li>从源代码生成的难度大一些(寄存器分配)</li>
+<li>解释执行速度较快(相较于栈式虚拟机)</li>
+<li>Lua</li>
+</ul>
+<p>栈式虚拟机</p>
+<ul>
+<li>从源代码生成的难度较小</li>
+<li>表示程序逻辑的代码大小较小</li>
+<li>解释执行速度慢一些</li>
+<li>JVM的解释执行部分、CPython</li>
+</ul>
+<p>即时编译(JustIn Time Compiler, JIT)</p>
+<ul>
+<li>把热点源代码直接编译成机器码给cpu执行，而不是让虚拟机解释执行中间代码(或者说是字节码)</li>
+<li>提高执行效率，比如使用JIT技术的PyPy的执行速度大约是CPython的6.3倍</li>
+<li>JVM、V8引擎、PyPy</li>
+</ul>
+<h1 id="链接概要"><a href="#链接概要" class="headerlink" title="链接概要"></a>链接概要</h1><p>链接是将各种代码和数据部分收集起来并组合成一个单一文件的过程，这个文件可被加载到存储器并执行</p>
+<p>链接执行时间</p>
+<ul>
+<li>编译时，也就是在源代码被翻译成机器代码时，静态链接</li>
+<li>加载时，也就是程序被加载器加载到存储器并执行时，动态链接</li>
+<li>运行时，由应用程序来执行，dlopen</li>
+</ul>
+<p>链接使得代码文件的分离编译成为可能</p>
+<p>目标文件</p>
+<ul>
+<li>可重定位的目标文件</li>
+<li>可执行的目标文件</li>
+<li>共享目标文件</li>
+</ul>
+<p>每个可重定位的目标模块都有一个符号表，它包含该模块所定义和引用的符号的信息，对于链接器来说有三种不同的符号</p>
+<ul>
+<li>本模块定义并能被其他模块引用的全局符号</li>
+<li>其他模块定义并被本模块引用的全局符号(外部符号)</li>
+<li>只被本模块定义和引用的本地符号(static普通函数、static全局变量、匿名namespace中的符号都属于本地符号)</li>
+</ul>
+<p>ELF格式可重定位的目标文件的结构如下:</p>
+<p><img src="/images/target_file.PNG" alt=""></p>
+<h1 id="符号解析"><a href="#符号解析" class="headerlink" title="符号解析"></a>符号解析</h1><p>链接器按命令行上从左到右的顺序处理输入文件，在整个符号解析过程中，维持3个集合，可重定位的目标文件集合E，未解析定义的符号集合U，已定义的符号集合D，初始状态这三个集合都是空的</p>
+<ul>
+<li>每读入一个文件就更新这3个集合，并在D中寻找U中的符号，然后做相应的修改</li>
+<li>读入的是库文件，就在库文件定义的符号中搜索U中的符号，若库文件中的某个目标文件定义匹配成功，则把该目标文件加入到E中，然后反复进行这个过程，直到U和D都不再发生变化，此时库文件中任何不包含在E中的目标文件都被丢弃</li>
+<li>扫描所有输入文件后，若U非空，链接器输出错误并终止</li>
+</ul>
+<p>命令行编译链接时的问题</p>
+<ul>
+<li>引用某个符号的目标文件或者库文件需要出现在定义改符号的目标文件或者库文件的前面</li>
+<li>如果几个库文件直接有互相引用，那么需按先引用再定义的顺序排序</li>
+</ul>
+<h1 id="静态链接"><a href="#静态链接" class="headerlink" title="静态链接"></a>静态链接</h1><p><img src="/images/static_link.PNG" alt=""></p>
+<h2 id="重定位"><a href="#重定位" class="headerlink" title="重定位"></a>重定位</h2><p>重定位节和符号定义</p>
+<ul>
+<li>链接器将所有相同类型的节合并为同一类型的新的聚合节</li>
+<li>将每个新的节的运行时地址存在段头部表中，并且更新新的符号表中每个符号的偏移量(运行时地址)</li>
+</ul>
+<p>重定位节中的符号引用</p>
+<ul>
+<li>链接器修改代码节和数据节中对每个符号的引用，使得它们指向正确的运行时地址，为了执行这一步，链接器依赖于重定位条目中的信息</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> &#123;</span></span><br><span class="line">    <span class="keyword">int</span> offset;     <span class="comment">/* offset of reference to relocate */</span></span><br><span class="line">    <span class="keyword">int</span> symbol:<span class="number">24</span>;  <span class="comment">/* symbol the reference should point to */</span></span><br><span class="line">    <span class="keyword">int</span> type:<span class="number">8</span>;     <span class="comment">/* relocation type */</span></span><br><span class="line">&#125; Elf32_Rel;</span><br></pre></td></tr></table></figure>
+<p>ELF可执行的目标文件:</p>
+<p><img src="/images/executable_target_file.PNG" alt=""></p>
+<p>加载可执行文件</p>
+<ul>
+<li>加载器运行时，在可执行文件的段头部表的指引下将可执行文件的相关内容拷贝到进程的虚拟地址空间所对应的内存中</li>
+<li>跳转到程序的入口点也就是符号_start的地址，执行_start例程</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="number">0x080480c0</span> &lt;_start&gt;:            <span class="comment">/* Entry point int .text */</span></span><br><span class="line">    call __libc_init_first      <span class="comment">/* Startup code in .text */</span></span><br><span class="line">    call _init                  <span class="comment">/* Startup code in .text */</span></span><br><span class="line">    call atexit                 <span class="comment">/* Startup code in .text */</span></span><br><span class="line">    call main                   <span class="comment">/* Application main routine */</span></span><br><span class="line">    call _exit                  <span class="comment">/* Returns control to OS */</span></span><br></pre></td></tr></table></figure>
+<h1 id="动态链接"><a href="#动态链接" class="headerlink" title="动态链接"></a>动态链接</h1><p><img src="/images/dynamic_link.PNG" alt=""></p>
+<p>链接器与动态库链接的时候没有拷贝代码段和数据段，而是拷贝了一些符号表，并记录了每个需要重定位的符号的标识以及定义该符号的动态库的标识</p>
+<p>与动态库链接生成的可执行的目标文件中多了一个.interp节，它包含动态链接器的路径，加载器加载的时候会识别这个节并运行动态链接器</p>
+<p>动态链接器将动态库文件映射到可执行程序的虚拟地址空间的共享区域内，并重定位尚未解析的引用符号</p>
+<ul>
+<li>数据符号在加载时重定位</li>
+<li>函数符号在第一次调用的时候重定位</li>
+</ul>
+<p>链接动态库与静态库相比在运行时效率会低一些</p>
+<ul>
+<li>访问动态库中的全局数据需要3-5个指令，而静态库是1个指令</li>
+<li>跳转到动态库函数入口地址时，第一次跳转需要5-10个指令，以后需要2个指令。而静态库链接的函数则只需要1个指令</li>
+</ul>
+<p>动态库优点则是方便升级，节省内存空间</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2016/02/03/summary-2015/" rel="prev" title="悄然溜走的2015">
+      <i class="fa fa-chevron-left"></i> 悄然溜走的2015
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2016/04/14/goodbye-old-friend/" rel="next" title="Goodbye, old friend">
+      Goodbye, old friend <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%BC%96%E8%AF%91%E6%A6%82%E8%A6%81"><span class="nav-number">1.</span> <span class="nav-text">编译概要</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%AF%8D%E6%B3%95%E5%88%86%E6%9E%90"><span class="nav-number">2.</span> <span class="nav-text">词法分析</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90"><span class="nav-number">3.</span> <span class="nav-text">语法分析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B9%94%E5%A7%86%E6%96%AF%E5%9F%BA%E8%B0%B1%E7%B3%BB"><span class="nav-number">3.1.</span> <span class="nav-text">乔姆斯基谱系</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%80%92%E5%BD%92%E4%B8%8B%E9%99%8D%E5%88%86%E6%9E%90"><span class="nav-number">3.2.</span> <span class="nav-text">递归下降分析</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%AF%AD%E4%B9%89%E5%88%86%E6%9E%90"><span class="nav-number">4.</span> <span class="nav-text">语义分析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B1%9E%E6%80%A7%E8%AE%A1%E7%AE%97"><span class="nav-number">4.1.</span> <span class="nav-text">属性计算</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%A6%E5%8F%B7%E8%A1%A8"><span class="nav-number">4.2.</span> <span class="nav-text">符号表</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BB%A3%E7%A0%81%E4%BC%98%E5%8C%96"><span class="nav-number">5.</span> <span class="nav-text">代码优化</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BB%A3%E7%A0%81%E7%94%9F%E6%88%90"><span class="nav-number">6.</span> <span class="nav-text">代码生成</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%99%9A%E6%8B%9F%E6%9C%BA"><span class="nav-number">7.</span> <span class="nav-text">虚拟机</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%93%BE%E6%8E%A5%E6%A6%82%E8%A6%81"><span class="nav-number">8.</span> <span class="nav-text">链接概要</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%AC%A6%E5%8F%B7%E8%A7%A3%E6%9E%90"><span class="nav-number">9.</span> <span class="nav-text">符号解析</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%9D%99%E6%80%81%E9%93%BE%E6%8E%A5"><span class="nav-number">10.</span> <span class="nav-text">静态链接</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%87%8D%E5%AE%9A%E4%BD%8D"><span class="nav-number">10.1.</span> <span class="nav-text">重定位</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8A%A8%E6%80%81%E9%93%BE%E6%8E%A5"><span class="nav-number">11.</span> <span class="nav-text">动态链接</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Li Yuan"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">Li Yuan</p>
+  <div class="site-description" itemprop="description">种一棵树最好的时间是十年前，其次是现在</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">29</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="mailto:liyuan989@gmail.com" title="Email → mailto:liyuan989@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>Email</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://cn.linkedin.com/in/liyuan989" title="Linkedin → https:&#x2F;&#x2F;cn.linkedin.com&#x2F;in&#x2F;liyuan989" rel="noopener" target="_blank"><i class="fab fa-linkedin fa-fw"></i>Linkedin</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/liyuan989" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;liyuan989" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/origin-989" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;origin-989" rel="noopener" target="_blank"><i class="fa fa-globe fa-fw"></i>Zhihu</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="http://weibo.com/liyuan989" title="Weibo → http:&#x2F;&#x2F;weibo.com&#x2F;liyuan989" rel="noopener" target="_blank"><i class="fab fa-weibo fa-fw"></i>Weibo</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2014 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Li Yuan</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

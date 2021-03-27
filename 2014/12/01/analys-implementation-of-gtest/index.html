@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico">
+  <link rel="mask-icon" href="/favicon.ico" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"originlee.com","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"right","display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="1. 前言Google test是一款开源的白盒单元测试框架，据说目前在Google内部已在几千个项目中应用了基于该框架的白盒测试。 最近的工作是在搞一个基于gtest框架搭建的自动化白盒测试项目，该项目上线也有一段时间了，目前来说效果还是挺不错的。 侯捷先生在《STL源码剖析》中说过一句话：「会用STL，是一种档次。对STL原理有所了解，又是一个档次。追踪过STL源码又是一个档次。第三种档次的人">
+<meta property="og:type" content="article">
+<meta property="og:title" content="解析gtest框架运行机制">
+<meta property="og:url" content="http://originlee.com/2014/12/01/analys-implementation-of-gtest/index.html">
+<meta property="og:site_name" content="Less is more">
+<meta property="og:description" content="1. 前言Google test是一款开源的白盒单元测试框架，据说目前在Google内部已在几千个项目中应用了基于该框架的白盒测试。 最近的工作是在搞一个基于gtest框架搭建的自动化白盒测试项目，该项目上线也有一段时间了，目前来说效果还是挺不错的。 侯捷先生在《STL源码剖析》中说过一句话：「会用STL，是一种档次。对STL原理有所了解，又是一个档次。追踪过STL源码又是一个档次。第三种档次的人">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://originlee.com/images/blog-gtest.png">
+<meta property="article:published_time" content="2014-12-01T05:59:00.000Z">
+<meta property="article:modified_time" content="2019-03-22T14:42:10.222Z">
+<meta property="article:author" content="Li Yuan">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://originlee.com/images/blog-gtest.png">
+
+<link rel="canonical" href="http://originlee.com/2014/12/01/analys-implementation-of-gtest/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>解析gtest框架运行机制 | Less is more</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Less is more</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://originlee.com/2014/12/01/analys-implementation-of-gtest/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="Li Yuan">
+      <meta itemprop="description" content="种一棵树最好的时间是十年前，其次是现在">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Less is more">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          解析gtest框架运行机制
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2014-12-01 13:59:00" itemprop="dateCreated datePublished" datetime="2014-12-01T13:59:00+08:00">2014-12-01</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/UnitTest/" itemprop="url" rel="index"><span itemprop="name">UnitTest</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="1-前言"><a href="#1-前言" class="headerlink" title="1. 前言"></a><strong>1. 前言</strong></h2><p>Google test是一款开源的白盒单元测试框架，据说目前在Google内部已在几千个项目中应用了基于该框架的白盒测试。</p>
+<p>最近的工作是在搞一个基于gtest框架搭建的自动化白盒测试项目，该项目上线也有一段时间了，目前来说效果还是挺不错的。</p>
+<p>侯捷先生在《STL源码剖析》中说过一句话：「会用STL，是一种档次。对STL原理有所了解，又是一个档次。追踪过STL源码又是一个档次。第三种档次的人用起STL来，虎虎生风之势绝非第一档次的人能够望其项背。」</p>
+<p>我认为使用一种框架时也是一样，只有当你知道框架内部是如何运行的，不仅知其然，还知其所以然，才能避免一些坑，使框架用起来更效率。</p>
+<p>就拿平常项目中用的最简单的一个测试demo（test_foo.cpp）来说吧</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">foo</span><span class="params">(<span class="keyword">int</span> a, <span class="keyword">int</span> b)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> a + b;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">TestWidget</span> :</span> <span class="keyword">public</span> testing::Environment</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">SetUp</span><span class="params">()</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">TearDown</span><span class="params">()</span></span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="built_in">TEST</span>(Test_foo, test_normal)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">EXPECT_EQ</span>(<span class="number">2</span>, <span class="built_in">foo</span>(<span class="number">1</span>, <span class="number">1</span>));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span> <span class="keyword">const</span> *argv[])</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    testing::<span class="built_in">AddGlobalTestEnvironment</span>(<span class="keyword">new</span> TestSysdbg);</span><br><span class="line">    testing::<span class="built_in">InitGoogleTest</span>(&amp;argc, argv);</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">RUN_ALL_TESTS</span>();</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>你可知道gtest是如何调用被测接口，如何输出测试结果的吗？本文主要解答这个问题。<span id="more"></span></p>
+<h2 id="2-解析"><a href="#2-解析" class="headerlink" title="2. 解析"></a>2. 解析</h2><h3 id="2-1-从预处理开始"><a href="#2-1-从预处理开始" class="headerlink" title="2.1 从预处理开始"></a>2.1 从预处理开始</h3><p>可能有些童鞋会问，为什么要从预处理开始讲呢？是这样的，用过gtest框架的都知道，我们所编写的每一个测试用例都是一个TEST宏，想知道背后的运行机制，就得知道那些TEST宏展开后是什么样的，而所有的宏、包含的头文件、inline函数都是在预处理阶段被预处理器展开的，然后才是经过编译器编译成汇编代码，接着汇编器把汇编代码生成可重定位的目标文件，然后链接器再把可重定位的目标文件链接成可执行文件的目标文件。</p>
+<p>所以本文从预处理开始介绍。</p>
+<p>需要提到的是Gtest中用到了许多的宏技巧以及c++的模板技巧。先不看源码中TEST宏的定义，直接用下面指令单独调用预处理器对源文件进行预处理：<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cpp test_foo.cpp test_foo.i –I&#x2F; gtest&#x2F;gtest-1.6&#x2F;</span><br></pre></td></tr></table></figure><br>打开生成的经过预处理的文件test_foo.i<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Test_foo_test_normal_Test</span> :</span> <span class="keyword">public</span> ::testing::Test</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">Test_foo_test_normal_Test</span>() &#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">TestBody</span><span class="params">()</span></span>;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">SetUp</span><span class="params">()</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">TearDown</span><span class="params">()</span></span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Test_foo_test_normal_Test</span> :</span> <span class="keyword">public</span> ::testing::Test</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">Test_foo_test_normal_Test</span>() &#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">TestBody</span><span class="params">()</span></span>;</span><br><span class="line">    <span class="keyword">static</span> ::testing::TestInfo* <span class="keyword">const</span> test_info_ __attribute__ ((unused));</span><br><span class="line">    <span class="built_in">Test_foo_test_normal_Test</span>(Test_foo_test_normal_Test <span class="keyword">const</span> &amp;);</span><br><span class="line">    <span class="keyword">void</span> <span class="keyword">operator</span>=(Test_foo_test_normal_Test <span class="keyword">const</span> &amp;);</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">::testing::TestInfo* <span class="keyword">const</span> Test_foo_test_normal_Test</span><br><span class="line">  ::test_info_ =</span><br><span class="line">    ::testing::internal::<span class="built_in">MakeAndRegisterTestInfo</span>(</span><br><span class="line">      <span class="string">&quot;Test_foo&quot;</span>, <span class="string">&quot;test_normal&quot;</span>, __null, __null,</span><br><span class="line">        (::testing::internal::<span class="built_in">GetTestTypeId</span>()),</span><br><span class="line">        ::testing::Test::SetUpTestCase,</span><br><span class="line">        ::testing::Test::TearDownTestCase,</span><br><span class="line"><span class="keyword">new</span> ::testing::internal::TestFactoryImpl&lt;Test_foo_test_normal_Test&gt;);</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">Test_foo_test_normal_Test::TestBody</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="built_in"><span class="keyword">switch</span></span> (<span class="number">0</span>)</span><br><span class="line">    <span class="keyword">case</span> <span class="number">0</span>:</span><br><span class="line">    <span class="keyword">default</span>:</span><br><span class="line">      <span class="keyword">if</span> (<span class="keyword">const</span> ::testing::AssertionResult gtest_ar =</span><br><span class="line">        (::testing::internal::</span><br><span class="line">        EqHelper&lt;(<span class="built_in"><span class="keyword">sizeof</span></span>(::testing::internal::<span class="built_in">IsNullLiteralHelper</span>(<span class="number">2</span>)) == <span class="number">1</span>) &gt;</span><br><span class="line">        ::<span class="built_in">Compare</span>(<span class="string">&quot;2&quot;</span>, <span class="string">&quot;foo(1, 1)&quot;</span>, <span class="number">2</span>, <span class="built_in">foo</span>(<span class="number">1</span>, <span class="number">1</span>)))) ;</span><br><span class="line">      <span class="keyword">else</span></span><br><span class="line">        ::testing::internal::<span class="built_in">AssertHelper</span>(::testing::TestPartResult::kNonFatalFailure,</span><br><span class="line">        <span class="string">&quot;test_foo.cpp&quot;</span>, <span class="number">17</span>, gtest_ar.<span class="built_in">failure_message</span>()) = ::testing::<span class="built_in">Message</span>();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span> *argv[])</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    testing::<span class="built_in">AddGlobalTestEnvironment</span>(<span class="keyword">new</span> TestWidget);</span><br><span class="line">    testing::<span class="built_in">InitGoogleTest</span>(&amp;argc, argv);</span><br><span class="line">    <span class="keyword">return</span> (::testing::UnitTest::<span class="built_in">GetInstance</span>()-&gt;<span class="built_in">Run</span>());</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>可以看到TEST宏经过预处理器处理后展开为：</p>
+<ul>
+<li>定义了一个继承自::testing::test类的新类Test_foo_test_normal_Test，该类的名字为TEST宏两个形参的拼接而成。</li>
+<li>TEST宏中的测试代码被展开并定义为生成类的成员函数TestBody的函数体。</li>
+<li>生成类的静态数据成员test_info_被初始化为函MakeAndRegisterTestInfo的返回值。具体意义后面介绍。</li>
+</ul>
+<h3 id="2-2-MakeAndRegisterTestInfo函数"><a href="#2-2-MakeAndRegisterTestInfo函数" class="headerlink" title="2.2 MakeAndRegisterTestInfo函数"></a>2.2 MakeAndRegisterTestInfo函数</h3><p>从上面来看MakeAndRegisterTestInfo函数是一个比较关键的函数了，从字面意思上看就是生成并注册该测试案例的信息，在头文件gtest.cc中可以找到关于它的定义，他是一个testing命名空间中的嵌套命名空间internal中的非成员函数：<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">TestInfo* <span class="title">MakeAndRegisterTestInfo</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">    <span class="keyword">const</span> <span class="keyword">char</span>* test_case_name, <span class="keyword">const</span> <span class="keyword">char</span>* name,</span></span></span><br><span class="line"><span class="function"><span class="params">    <span class="keyword">const</span> <span class="keyword">char</span>* type_param,</span></span></span><br><span class="line"><span class="function"><span class="params">    <span class="keyword">const</span> <span class="keyword">char</span>* value_param,</span></span></span><br><span class="line"><span class="function"><span class="params">    TypeId fixture_class_id,</span></span></span><br><span class="line"><span class="function"><span class="params">    SetUpTestCaseFunc set_up_tc,</span></span></span><br><span class="line"><span class="function"><span class="params">    TearDownTestCaseFunc tear_down_tc,</span></span></span><br><span class="line"><span class="function"><span class="params">    TestFactoryBase* factory)</span> </span>&#123;</span><br><span class="line">  TestInfo* <span class="keyword">const</span> test_info =</span><br><span class="line">      <span class="keyword">new</span> <span class="built_in">TestInfo</span>(test_case_name, name, type_param, value_param,</span><br><span class="line">                   fixture_class_id, factory);</span><br><span class="line">  <span class="built_in">GetUnitTestImpl</span>()-&gt;<span class="built_in">AddTestInfo</span>(set_up_tc, tear_down_tc, test_info);</span><br><span class="line">  <span class="keyword">return</span> test_info;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>其中形参的意义如下：</p>
+<ul>
+<li>test_case_name：测试套名称，即TEST宏中的第一个形参。</li>
+<li>name：测试案例名称。</li>
+<li>type_param：测试套的附加信息。默认为无</li>
+<li>value_param：测试案例的附加信息。默认为无</li>
+<li>fixture_class_id：test fixture类的id</li>
+<li>set_up_tc ：函数指针，指向函数SetUpTestCaseFunc</li>
+<li>tear_down_tc：函数指针，指向函数TearDownTestCaseFunc</li>
+<li>factory：指向工厂对象的指针，该工厂对象创建上面TEST宏生成的测试类的对象</li>
+</ul>
+<p>我们看到在MakeAndRegisterTestInfo函数体中定义了一个TestInfo对象，该对象包含了一个TEST宏中标识的测试案例的测试套名称、测试案例名称、测试套附加信息、测试案例附加信息、创建测试案例类对象的工厂对象的指针这些信息。</p>
+<p>下面大家可能就会比较好奇所谓的工厂对象，可以在gtest-internal.h中找带它的定义</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="class"><span class="keyword">class</span> <span class="title">TestClass</span>&gt;</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">TestFactoryImpl</span> :</span> <span class="keyword">public</span> TestFactoryBase &#123;</span><br><span class="line"> <span class="keyword">public</span>:</span><br><span class="line">  <span class="function"><span class="keyword">virtual</span> Test* <span class="title">CreateTest</span><span class="params">()</span> </span>&#123; <span class="keyword">return</span> <span class="keyword">new</span> TestClass; &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>TestFactoryImpl类是一个模板类，它的作用就是单纯的创建对应于模板形参类型的测试案例对象。因为模板的存在也大大简化了代码，否则可能就要写无数个TestFactoryImpl类了，呵呵。<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="built_in">GetUnitTestImpl</span>()-&gt;<span class="built_in">AddTestInfo</span>(set_up_tc, tear_down_tc, test_info);</span><br></pre></td></tr></table></figure><br>乍一看似乎是对test_info对象的一些熟悉信息进行设置。究竟是怎么样呢？源码面前，了无秘密，我们还是得去找到它的源码，在gtest-internal-inl中可以找到它的定义<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">inline</span> UnitTestImpl* <span class="title">GetUnitTestImpl</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> UnitTest::<span class="built_in">GetInstance</span>()-&gt;<span class="built_in">impl</span>();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>它的实现也是非常简单，关键还是在UnitTest类的成员函数GetInstance和返回类型的成员函数impl，继续追踪下去<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">GTEST_API_</span> <span class="title">UnitTest</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line"><span class="comment">// Gets the singleton UnitTest object.  The first time this method</span></span><br><span class="line"><span class="comment">// is called, a UnitTest object is constructed and returned.</span></span><br><span class="line"><span class="comment">// Consecutive calls will return the same object.</span></span><br><span class="line">  <span class="function"><span class="keyword">static</span> UnitTest* <span class="title">GetInstance</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="function">internal::UnitTestImpl* <span class="title">impl</span><span class="params">()</span> </span>&#123; <span class="keyword">return</span> impl_; &#125;</span><br><span class="line">  <span class="function"><span class="keyword">const</span> internal::UnitTestImpl* <span class="title">impl</span><span class="params">()</span> <span class="keyword">const</span> </span>&#123; <span class="keyword">return</span> impl_; &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">  <span class="keyword">mutable</span> internal::Mutex mutex_;</span><br><span class="line">  internal::UnitTestImpl* impl_;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function">UnitTest * <span class="title">UnitTest::GetInstance</span><span class="params">()</span> </span>&#123;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> (_MSC_VER == 1310 &amp;&amp; !defined(_DEBUG)) || defined(__BORLANDC__)</span></span><br><span class="line">   <span class="keyword">static</span> UnitTest* <span class="keyword">const</span> instance = <span class="keyword">new</span> UnitTest;</span><br><span class="line">   <span class="keyword">return</span> instance;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span></span></span><br><span class="line">   <span class="keyword">static</span> UnitTest instance;</span><br><span class="line">   <span class="keyword">return</span> &amp;instance;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>根据代码和注释可知GetInstance是Unitest类的成员函数，它仅仅是生成一个静态的UniTest对象然后返回。实际上这么做是为了实现UniTest类的单例(Singleton)实例。而impl只是单纯的返回UniTest的UnitTestImpl类型的指针数据成员impl_。</p>
+<p>再联系之前的代码，通过UnitTestImpl类的AddTestInfo设置Test_Info类对象的信息。其实绕了一圈，最终就是通过AddTestInfo设置Test_info类对象的信息，自然地，我们需要知道AddTestInfo的实现啦：<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">AddTestInfo</span><span class="params">(Test::SetUpTestCaseFunc set_up_tc,</span></span></span><br><span class="line"><span class="function"><span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">               Test::TearDownTestCaseFunc tear_down_tc,</span></span></span><br><span class="line"><span class="function"><span class="params">                   TestInfo* test_info)</span> </span>&#123;</span><br><span class="line">    <span class="built_in">GetTestCase</span>(test_info-&gt;<span class="built_in">test_case_name</span>(),</span><br><span class="line">                test_info-&gt;<span class="built_in">type_param</span>(),</span><br><span class="line">                set_up_tc,</span><br><span class="line">                tear_down_tc)-&gt;<span class="built_in">AddTestInfo</span>(test_info);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>而AddTestInfo是通过GetTestCase函数实现的<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">TestCase* <span class="title">UnitTestImpl::GetTestCase</span><span class="params">(<span class="keyword">const</span> <span class="keyword">char</span>* test_case_name,</span></span></span><br><span class="line"><span class="function"><span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">                                <span class="keyword">const</span> <span class="keyword">char</span>* type_param,</span></span></span><br><span class="line"><span class="function"><span class="params">                                    Test::SetUpTestCaseFunc set_up_tc,</span></span></span><br><span class="line"><span class="function"><span class="params">                                    Test::TearDownTestCaseFunc tear_down_tc)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// Can we find a TestCase with the given name?</span></span><br><span class="line">  <span class="keyword">const</span> std::vector&lt;TestCase*&gt;::const_iterator test_case =</span><br><span class="line">      std::<span class="built_in">find_if</span>(test_cases_.<span class="built_in">begin</span>(), test_cases_.<span class="built_in">end</span>(),</span><br><span class="line">                   <span class="built_in">TestCaseNameIs</span>(test_case_name));</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (test_case != test_cases_.<span class="built_in">end</span>())</span><br><span class="line">    <span class="keyword">return</span> *test_case;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// No.  Let&#x27;s create one.</span></span><br><span class="line">  TestCase* <span class="keyword">const</span> new_test_case =</span><br><span class="line">      <span class="keyword">new</span> <span class="built_in">TestCase</span>(test_case_name, type_param, set_up_tc, tear_down_tc);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// Is this a death test case?</span></span><br><span class="line">  <span class="keyword">if</span> (internal::UnitTestOptions::<span class="built_in">MatchesFilter</span>(<span class="built_in">String</span>(test_case_name),</span><br><span class="line"></span><br><span class="line">                                           kDeathTestCaseFilter)) &#123;</span><br><span class="line">    <span class="comment">// Yes.  Inserts the test case after the last death test case</span></span><br><span class="line">    <span class="comment">// defined so far.  This only works when the test cases haven&#x27;t</span></span><br><span class="line">    <span class="comment">// been shuffled.  Otherwise we may end up running a death test</span></span><br><span class="line">    <span class="comment">// after a non-death test.</span></span><br><span class="line">    ++last_death_test_case_;</span><br><span class="line">    test_cases_.<span class="built_in">insert</span>(test_cases_.<span class="built_in">begin</span>() + last_death_test_case_,</span><br><span class="line">                       new_test_case);</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="comment">// No.  Appends to the end of the list.</span></span><br><span class="line">    test_cases_.<span class="built_in">push_back</span>(new_test_case);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  test_case_indices_.<span class="built_in">push_back</span>(<span class="keyword">static_cast</span>&lt;<span class="keyword">int</span>&gt;(test_case_indices_.<span class="built_in">size</span>()));</span><br><span class="line">  <span class="keyword">return</span> new_test_case;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>从上面代码可以看出其实并不是一开始猜测的设置Test_Info对象的信息，而是判断包含Test_info对象中的测试套名称、测试案例名称等信息的TestCase对象的指针是否在一个vector向量中，若存在就返回这个指针；若不存在就把创建一个包含这些信息的TestCase对象的指针加入到vector向量中，并返回这个指针。</p>
+<p>至于vector向量test_cases_，它是UnitTestImpl中的私有数据成员，在这个向量中存放了整个测试项目中所有包含测试套、测试案例等信息的TestCase对象的指针。</p>
+<p>紧接着我们看到从GetTestCase返回的TestCase指针调用TestCase类中的成员函数AddTestInfo，在gtest.cc中可以找到它的定义如下：<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">TestCase::AddTestInfo</span><span class="params">(TestInfo * test_info)</span> </span>&#123;</span><br><span class="line">  test_info_list_.<span class="built_in">push_back</span>(test_info);</span><br><span class="line">  test_indices_.<span class="built_in">push_back</span>(<span class="keyword">static_cast</span>&lt;<span class="keyword">int</span>&gt;(test_indices_.<span class="built_in">size</span>()));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>调用这个函数的目的是在于将Test_info对象添加到test_info_list_中，而test_info_list_是类TestCase中的私有数据成员，它也是一个vector向量。原型为<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line">std::vector&lt;TestInfo*&gt; test_info_list_;</span><br></pre></td></tr></table></figure><br>该向量保存着整个项目中所有包含测试案例对象各种信息的Test_Info对象的指针。</p>
+<p>而test_indices_也是类TestCase中的私有数据成员，保存着test_info_list中每个元素的索引号。它仍然是一个vector向量，原型为<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line">std::vector&lt;<span class="keyword">int</span>&gt; test_indices_;</span><br></pre></td></tr></table></figure></p>
+<h3 id="2-3-TEST宏"><a href="#2-3-TEST宏" class="headerlink" title="2.3 TEST宏"></a>2.3 TEST宏</h3><p>此时，我们再来看看TEST宏的具体定义实现：<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">if</span> !GTEST_DONT_DEFINE_TEST</span></span><br><span class="line"><span class="meta"># <span class="meta-keyword">define</span> TEST(test_case_name, test_name) GTEST_TEST(test_case_name, test_name)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> GTEST_TEST(test_case_name, test_name)\</span></span><br><span class="line">  <span class="built_in">GTEST_TEST_</span>(test_case_name, test_name, \</span><br><span class="line"></span><br><span class="line">          ::testing::Test, ::testing::internal::<span class="built_in">GetTestTypeId</span>())</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> TEST_F(test_fixture, test_name)\</span></span><br><span class="line">  <span class="built_in">GTEST_TEST_</span>(test_fixture, test_name, test_fixture, \</span><br><span class="line"></span><br><span class="line">          ::testing::internal::GetTypeId&lt;test_fixture&gt;())</span><br></pre></td></tr></table></figure></p>
+<p>可以看到，TEST宏和事件机制对于的TEST_F宏都是调用了GTEST_TEST_宏，我们再追踪这个宏的定义<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> GTEST_TEST_(test_case_name, test_name, parent_class, parent_id)\</span></span><br><span class="line"><span class="function">class <span class="title">GTEST_TEST_CLASS_NAME_</span><span class="params">(test_case_name, test_name)</span> : public parent_class &#123;</span>\</span><br><span class="line"> <span class="keyword">public</span>:\</span><br><span class="line">  <span class="built_in">GTEST_TEST_CLASS_NAME_</span>(test_case_name, test_name)() &#123;&#125;\</span><br><span class="line"> <span class="keyword">private</span>:\</span><br><span class="line">  <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">TestBody</span><span class="params">()</span></span>;\</span><br><span class="line">  <span class="keyword">static</span> ::testing::TestInfo* <span class="keyword">const</span> test_info_ GTEST_ATTRIBUTE_UNUSED_;\</span><br><span class="line">  <span class="built_in">GTEST_DISALLOW_COPY_AND_ASSIGN_</span>(\</span><br><span class="line">      <span class="built_in">GTEST_TEST_CLASS_NAME_</span>(test_case_name, test_name));\</span><br><span class="line">&#125;;\</span><br><span class="line">\</span><br><span class="line">::testing::TestInfo* const GTEST_TEST_CLASS_NAME_(test_case_name, test_name)\</span><br><span class="line">  ::test_info_ =\</span><br><span class="line">    ::testing::internal::<span class="built_in">MakeAndRegisterTestInfo</span>(\</span><br><span class="line">        #test_case_name, #test_name, <span class="literal">NULL</span>, <span class="literal">NULL</span>, \</span><br><span class="line">        (parent_id), \</span><br><span class="line">        parent_class::SetUpTestCase, \</span><br><span class="line">        parent_class::TearDownTestCase, \</span><br><span class="line">        <span class="keyword">new</span> ::testing::internal::TestFactoryImpl&lt;\</span><br><span class="line">            <span class="built_in">GTEST_TEST_CLASS_NAME_</span>(test_case_name, test_name)&gt;);\</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">GTEST_TEST_CLASS_NAME_</span><span class="params">(test_case_name, test_name)</span>::<span class="title">TestBody</span><span class="params">()</span></span></span><br></pre></td></tr></table></figure><br>我们终于看到了在预处理展开中得到的案例类的定义和注册案例类对象信息的定义代码啦。唯一的疑问在于类的名字是GTEST_TEST_CLASS_NAME_，从字面意思可以知道这宏就是获得类的名字<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> GTEST_TEST_CLASS_NAME_(test_case_name, test_name) \</span></span><br><span class="line">  test_case_name##_##test_name##_Test</span><br></pre></td></tr></table></figure><br>果不其然，宏GTEST_TEST_CLASS_NAME的功能就是把两个参数拼接为一个参数。</p>
+<h3 id="2-4-RUN-ALL-TESTS宏"><a href="#2-4-RUN-ALL-TESTS宏" class="headerlink" title="2.4 RUN_ALL_TESTS宏"></a>2.4 RUN_ALL_TESTS宏</h3><p>我们的测试程序就是从main函数中的RUN_ALL_TEST的调用开始的，在gtest.h中可以找到该宏的定义<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> RUN_ALL_TESTS()\</span></span><br><span class="line">  (::testing::UnitTest::<span class="built_in">GetInstance</span>()-&gt;<span class="built_in">Run</span>())</span><br></pre></td></tr></table></figure><br>RUN_ALL_TESTS就是简单的调用UnitTest的成员函数GetInstance，我们知道GetInstance就是返回一个单例(Singleton)UnitTest对象，该对象调用成员函数Run<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">UnitTest::Run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="built_in">impl</span>()-&gt;<span class="built_in">set_catch_exceptions</span>(<span class="built_in">GTEST_FLAG</span>(catch_exceptions));</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> internal::<span class="built_in">HandleExceptionsInMethodIfSupported</span>(</span><br><span class="line">      <span class="built_in">impl</span>(),</span><br><span class="line">      &amp;internal::UnitTestImpl::RunAllTests,</span><br><span class="line">     <span class="string">&quot;auxiliary test code (environments or event listeners)&quot;</span>) ? <span class="number">0</span> : <span class="number">1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>Run函数也是简单的调用HandleExceptionsInMethodIfSupported函数，追踪它的实现<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="class"><span class="keyword">class</span> <span class="title">T</span>, <span class="title">typename</span> <span class="title">Result</span>&gt;</span></span><br><span class="line"><span class="function">Result <span class="title">HandleExceptionsInMethodIfSupported</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">    T* object, Result (T::*method)(), <span class="keyword">const</span> <span class="keyword">char</span>* location)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (internal::<span class="built_in">GetUnitTestImpl</span>()-&gt;<span class="built_in">catch_exceptions</span>()) &#123;</span><br><span class="line">     ......  <span class="comment">//异常处理省略</span></span><br><span class="line">     &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">     <span class="built_in"><span class="keyword">return</span></span> (object-&gt;*method)();</span><br><span class="line">   &#125;</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure><br>HandleExceptionsInMethodIfSupported是一个模板函数，他的模板形参具现化为调用它的UnitTestImpl和int，也就是T = UnitTestImpl， Result = int。在函数体里调用UnitTestImpl类的成员函数RunAllTests<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">UnitTestImpl::RunAllTests</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    ......</span><br><span class="line">    <span class="keyword">const</span> TimeInMillis start = <span class="built_in">GetTimeInMillis</span>();  <span class="comment">//开始计时</span></span><br><span class="line">    <span class="keyword">if</span> (has_tests_to_run &amp;&amp; <span class="built_in">GTEST_FLAG</span>(shuffle)) &#123;</span><br><span class="line">       <span class="built_in">random</span>()-&gt;<span class="built_in">Reseed</span>(random_seed_);</span><br><span class="line">       <span class="built_in">ShuffleTests</span>();</span><br><span class="line">     &#125;</span><br><span class="line">     repeater-&gt;<span class="built_in">OnTestIterationStart</span>(*parent_, i);</span><br><span class="line"></span><br><span class="line">     <span class="keyword">if</span> (has_tests_to_run) &#123;</span><br><span class="line">       <span class="comment">//初始化全局的SetUp事件</span></span><br><span class="line">       repeater-&gt;<span class="built_in">OnEnvironmentsSetUpStart</span>(*parent_);</span><br><span class="line">       <span class="comment">//顺序遍历注册全局SetUp事件</span></span><br><span class="line">       <span class="built_in">ForEach</span>(environments_, SetUpEnvironment);</span><br><span class="line">       <span class="comment">//初始化全局TearDown事件</span></span><br><span class="line">       repeater-&gt;<span class="built_in">OnEnvironmentsSetUpEnd</span>(*parent_);</span><br><span class="line">       <span class="comment">//</span></span><br><span class="line">       <span class="comment">// set-up.</span></span><br><span class="line">       <span class="keyword">if</span> (!Test::<span class="built_in">HasFatalFailure</span>()) &#123;</span><br><span class="line">         <span class="keyword">for</span> (<span class="keyword">int</span> test_index = <span class="number">0</span>; test_index &lt; <span class="built_in">total_test_case_count</span>();</span><br><span class="line">              test_index++) &#123;</span><br><span class="line">           <span class="built_in">GetMutableTestCase</span>(test_index)-&gt;<span class="built_in">Run</span>(); <span class="comment">//TestCase::Run</span></span><br><span class="line">         &#125;</span><br><span class="line">       &#125;</span><br><span class="line">      <span class="comment">// 反向遍历取消所有全局事件.</span></span><br><span class="line">      repeater-&gt;<span class="built_in">OnEnvironmentsTearDownStart</span>(*parent_);</span><br><span class="line">     std::for_each(environments_.<span class="built_in">rbegin</span>(), environments_.<span class="built_in">rend</span>(),</span><br><span class="line">                    TearDownEnvironment);</span><br><span class="line">      repeater-&gt;<span class="built_in">OnEnvironmentsTearDownEnd</span>(*parent_);</span><br><span class="line">    &#125;</span><br><span class="line">    elapsed_time_ = <span class="built_in">GetTimeInMillis</span>() - start; <span class="comment">//停止计时</span></span><br><span class="line">    ......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>如上面代码所示，UnitTestImpl::RunAllTests主要进行全局事件的初始化，以及变量注册。而真正的执行部分在于调用GetMutableTestCase<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">TestCase* <span class="title">UnitTest::GetMutableTestCase</span><span class="params">(<span class="keyword">int</span> i)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="built_in">impl</span>()-&gt;<span class="built_in">GetMutableTestCase</span>(i); <span class="comment">//impl返回UnitTestImpl类型指针</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">TestCase* UnitTestImpl:: <span class="built_in">GetMutableTestCase</span>(<span class="keyword">int</span> i) &#123;</span><br><span class="line">    <span class="keyword">const</span> <span class="keyword">int</span> index = <span class="built_in">GetElementOr</span>(test_case_indices_, i, <span class="number">-1</span>);</span><br><span class="line">    <span class="keyword">return</span> index &lt; <span class="number">0</span> ? <span class="literal">NULL</span> : test_cases_[index];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>经过两次调用返回vector向量test_cases_中的元素，它的元素类型为TestCase类型。然后调用TestCase::Run<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">TestCase::Run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  ......  <span class="comment">//省略</span></span><br><span class="line">  <span class="keyword">const</span> internal::TimeInMillis start = internal::<span class="built_in">GetTimeInMillis</span>();</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="built_in">total_test_count</span>(); i++) &#123;</span><br><span class="line">    <span class="built_in">GetMutableTestInfo</span>(i)-&gt;<span class="built_in">Run</span>(); <span class="comment">//调用TestCase::GetMutableTestInfo</span></span><br><span class="line">  &#125;                                     <span class="comment">//以及Test_Info::Run</span></span><br><span class="line">  ...... <span class="comment">//省略</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function">TestInfo* <span class="title">TestCase::GetMutableTestInfo</span><span class="params">(<span class="keyword">int</span> i)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">const</span> <span class="keyword">int</span> index = <span class="built_in">GetElementOr</span>(test_indices_, i, <span class="number">-1</span>);</span><br><span class="line">  <span class="keyword">return</span> index &lt; <span class="number">0</span> ? <span class="literal">NULL</span> : test_info_list_[index];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>看到又转向调用TestCase::GetMutableTestInfo，返回向量test_info_list_的元素。而它的元素类型为Test_info。进而又转向了Test_info::Run<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">TestInfo::Run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  ......  <span class="comment">//省略</span></span><br><span class="line">  Test* <span class="keyword">const</span> test = internal::<span class="built_in">HandleExceptionsInMethodIfSupported</span>(</span><br><span class="line">      factory_, &amp;internal::TestFactoryBase::CreateTest,</span><br><span class="line">      <span class="string">&quot;the test fixture&#x27;s constructor&quot;</span>);</span><br><span class="line">  ......  <span class="comment">//省略</span></span><br><span class="line">    test-&gt;<span class="built_in">Run</span>();  <span class="comment">// Test::Run</span></span><br><span class="line">  ......   <span class="comment">//省略</span></span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure><br>在TestInfo::Run中调用了HandleExceptionsInMethodIfSupported，通过上文中的分析可以得知该函数在这个地方最终的作用是调用internal::TestFactoryBase::CreateTest将factor_所指的工厂对象创建的测试案例对象的地址赋给Test类型的指针test。所以最后调用了Test::Run。<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">Test::Run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (!<span class="built_in">HasSameFixtureClass</span>()) <span class="keyword">return</span>;</span><br><span class="line"></span><br><span class="line">  internal::UnitTestImpl* <span class="keyword">const</span> impl = internal::<span class="built_in">GetUnitTestImpl</span>();</span><br><span class="line">  impl-&gt;<span class="built_in">os_stack_trace_getter</span>()-&gt;<span class="built_in">UponLeavingGTest</span>();</span><br><span class="line">  internal::<span class="built_in">HandleExceptionsInMethodIfSupported</span>(<span class="keyword">this</span>, &amp;Test::SetUp, <span class="string">&quot;SetUp()&quot;</span>);</span><br><span class="line">  <span class="comment">// We will run the test only if SetUp() was successful.</span></span><br><span class="line">  <span class="keyword">if</span> (!<span class="built_in">HasFatalFailure</span>()) &#123;</span><br><span class="line">    impl-&gt;<span class="built_in">os_stack_trace_getter</span>()-&gt;<span class="built_in">UponLeavingGTest</span>();</span><br><span class="line">    internal::<span class="built_in">HandleExceptionsInMethodIfSupported</span>(</span><br><span class="line">        <span class="keyword">this</span>, &amp;Test::TestBody, <span class="string">&quot;the test body&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// However, we want to clean up as much as possible.  Hence we will</span></span><br><span class="line">  <span class="comment">// always call TearDown(), even if SetUp() or the test body has</span></span><br><span class="line">  <span class="comment">// failed.</span></span><br><span class="line">  impl-&gt;<span class="built_in">os_stack_trace_getter</span>()-&gt;<span class="built_in">UponLeavingGTest</span>();</span><br><span class="line">  internal::<span class="built_in">HandleExceptionsInMethodIfSupported</span>(</span><br><span class="line">      <span class="keyword">this</span>, &amp;Test::TearDown, <span class="string">&quot;TearDown()&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>在Test::Run函数体中我们看到通过HandleExceptionsInMethodIfSupported调用了TestBody，先来看看Test中TestBody的原型声明<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">TestBody</span><span class="params">()</span> </span>= <span class="number">0</span>;</span><br></pre></td></tr></table></figure><br>TestBody被声明为纯虚函数。一切都明朗了，在上文中通过test调用Test::Run，进而通过test::调用TestBody，而test实际上是指向继承自Test类的案例类对象，进而发生了多态，调用的是Test_foo_test_normal_Test::TestBody，也就是我们最初在TEST或者TEST_F宏中所写的测试代码。</p>
+<p>如此遍历，就是顺序执行测试demo程序中所写的每一个TEST宏的函数体啦。</p>
+<h2 id="3-总结"><a href="#3-总结" class="headerlink" title="3. 总结"></a>3. 总结</h2><p>经过对预处理得到的TEST宏进行逆向跟踪，到正向跟踪RUN_ALL_TESTS宏，了解了gtest的整个运行过程，里面涉及到一下GOF设计模式的运用，比如工厂函数、Singleton、Impl等。仔细推敲便可发现gtest设计层层跳转，虽然有些复杂，但也非常巧妙，很多地方非常值得我们自己写代码的时候学习的。</p>
+<p>另外本文没有提到的地方如断言宏，输出log日志等，因为比较简单就略过了。断言宏和输出log就是在每次遍历调用TestBody的时候进行相应的判断和输出打印，有兴趣的童鞋可以自行研究啦。</p>
+<p>下图是一个简单的TEST宏展开后的流程图</p>
+<p><img src="/images/blog-gtest.png" alt=""></p>
+<p>最后再简单将gtest的运行过程简述一遍：</p>
+<ol>
+<li>整个测试项目只有一个UnitTest对象，因而整个项目也只有一个UnitTestImpl对象。</li>
+<li>每一个TEST宏生成一个测试案例类，继承自Test类。</li>
+<li>对于每一个测试案例类，由一个工厂类对象创建该类对象。</li>
+<li>由该测试案例类对象创建一个Test_Info类对象。</li>
+<li>由Test_Info类对象创建一个Test_case对象</li>
+<li>创建Test_case对象的指针，并将其插入到UnitTestImpl对象的数据成员vector向量的末尾位置。</li>
+<li>对每一个TEST宏进行2-6步骤，那么对于唯一一个UnitTestImpl对象来说，它的数据成员vector向量中的元素按顺序依次指向每一个包含测试案例对象信息的TestCase对象。</li>
+<li>执行RUN_ALL_TESTS宏，开始执行用例。从头往后依次遍历UnitTestImpl对象中vector向量的中的元素，对于其中的每一个元素指针，经过一系列间接的方式最终调用其所对应的测试案例对象的TestBody成员函数，即测试用例代码。</li>
+</ol>
+<h2 id="4-参考文献"><a href="#4-参考文献" class="headerlink" title="4. 参考文献"></a>4. 参考文献</h2><ol>
+<li><a target="_blank" rel="noopener" href="https://code.google.com/p/googletest/wiki/FAQ">FAQ - Google Test</a><br>（完）</li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2014/11/03/analysis-of-rbtree/" rel="prev" title="红黑树插入和删除的情况分析">
+      <i class="fa fa-chevron-left"></i> 红黑树插入和删除的情况分析
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2014/12/02/overload-between-template-function-and-non-template-function-in-cxx/" rel="next" title="聊聊C++模板函数与非模板函数的重载">
+      聊聊C++模板函数与非模板函数的重载 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">1. 前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E8%A7%A3%E6%9E%90"><span class="nav-number">2.</span> <span class="nav-text">2. 解析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-%E4%BB%8E%E9%A2%84%E5%A4%84%E7%90%86%E5%BC%80%E5%A7%8B"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 从预处理开始</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-MakeAndRegisterTestInfo%E5%87%BD%E6%95%B0"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 MakeAndRegisterTestInfo函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-3-TEST%E5%AE%8F"><span class="nav-number">2.3.</span> <span class="nav-text">2.3 TEST宏</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-4-RUN-ALL-TESTS%E5%AE%8F"><span class="nav-number">2.4.</span> <span class="nav-text">2.4 RUN_ALL_TESTS宏</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E6%80%BB%E7%BB%93"><span class="nav-number">3.</span> <span class="nav-text">3. 总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE"><span class="nav-number">4.</span> <span class="nav-text">4. 参考文献</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Li Yuan"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">Li Yuan</p>
+  <div class="site-description" itemprop="description">种一棵树最好的时间是十年前，其次是现在</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">29</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="mailto:liyuan989@gmail.com" title="Email → mailto:liyuan989@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>Email</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://cn.linkedin.com/in/liyuan989" title="Linkedin → https:&#x2F;&#x2F;cn.linkedin.com&#x2F;in&#x2F;liyuan989" rel="noopener" target="_blank"><i class="fab fa-linkedin fa-fw"></i>Linkedin</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/liyuan989" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;liyuan989" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/origin-989" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;origin-989" rel="noopener" target="_blank"><i class="fa fa-globe fa-fw"></i>Zhihu</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="http://weibo.com/liyuan989" title="Weibo → http:&#x2F;&#x2F;weibo.com&#x2F;liyuan989" rel="noopener" target="_blank"><i class="fab fa-weibo fa-fw"></i>Weibo</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2014 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Li Yuan</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

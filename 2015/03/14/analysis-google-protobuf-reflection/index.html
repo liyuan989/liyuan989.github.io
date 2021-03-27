@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico">
+  <link rel="mask-icon" href="/favicon.ico" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"originlee.com","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"right","display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="Google Protocol Buffer（简称protobuf）是Google内部混合语言数据标准，protobuf是一种紧凑的可扩展的二进制消息格式，适合做网络数据传输、数据存储的消息格式。 protobuf作为网络传输的消息格式，有两个问题需要解决：  消息长度。protobuf打包的数据没有自带长度信息，需要应用程序自己在发送和接收消息的时候做切分。 消息类型。protobuf打包的数据">
+<meta property="og:type" content="article">
+<meta property="og:title" content="解析Google Protocol Buffer消息类型的自动反射原理">
+<meta property="og:url" content="http://originlee.com/2015/03/14/analysis-google-protobuf-reflection/index.html">
+<meta property="og:site_name" content="Less is more">
+<meta property="og:description" content="Google Protocol Buffer（简称protobuf）是Google内部混合语言数据标准，protobuf是一种紧凑的可扩展的二进制消息格式，适合做网络数据传输、数据存储的消息格式。 protobuf作为网络传输的消息格式，有两个问题需要解决：  消息长度。protobuf打包的数据没有自带长度信息，需要应用程序自己在发送和接收消息的时候做切分。 消息类型。protobuf打包的数据">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://originlee.com/images/blog-analysis_google_protobuf_reflection.png">
+<meta property="article:published_time" content="2015-03-14T13:46:10.000Z">
+<meta property="article:modified_time" content="2019-03-22T14:48:12.420Z">
+<meta property="article:author" content="Li Yuan">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://originlee.com/images/blog-analysis_google_protobuf_reflection.png">
+
+<link rel="canonical" href="http://originlee.com/2015/03/14/analysis-google-protobuf-reflection/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>解析Google Protocol Buffer消息类型的自动反射原理 | Less is more</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Less is more</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://originlee.com/2015/03/14/analysis-google-protobuf-reflection/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="Li Yuan">
+      <meta itemprop="description" content="种一棵树最好的时间是十年前，其次是现在">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Less is more">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          解析Google Protocol Buffer消息类型的自动反射原理
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2015-03-14 21:46:10" itemprop="dateCreated datePublished" datetime="2015-03-14T21:46:10+08:00">2015-03-14</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/" itemprop="url" rel="index"><span itemprop="name">网络编程</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>Google Protocol Buffer（简称protobuf）是Google内部混合语言数据标准，protobuf是一种紧凑的可扩展的二进制消息格式，适合做网络数据传输、数据存储的消息格式。</p>
+<p>protobuf作为网络传输的消息格式，有两个问题需要解决：</p>
+<ul>
+<li>消息长度。protobuf打包的数据没有自带长度信息，需要应用程序自己在发送和接收消息的时候做切分。</li>
+<li>消息类型。protobuf打包的数据没有自带消息类型，需要由发送方把类型信息传给接收方，接收方再根据收到的消息类型创建具体的Message对象。<br>第一个问题很好解决，可以在protobuf消息的前面附加一个固定长度的HeaderLen即可。</li>
+</ul>
+<p>第二个问题可能很多人会想到在HeaderLen和protobuf消息之间再加上一个消息类型数据段，由接收方根据不同的类型创建相应的Message对象。但其实protobuf已经自带了消息类型反射的功能。</p>
+<h2 id="自动反射"><a href="#自动反射" class="headerlink" title="自动反射"></a>自动反射</h2><p>Google Protocol Buffer具有reflection的功能，可以根据type name创建相应的类型的Message对象。（下图引用自<a target="_blank" rel="noopener" href="http://blog.csdn.net/solstice/article/details/6300108">陈硕的blog</a>）</p>
+<p><a href="/images/blog-analysis_google_protobuf_reflection.png"><img src="/images/blog-analysis_google_protobuf_reflection.png" alt=""></a></p>
+<p>protobuf自动反射功能的关键所在就是Descriptor了，每个Message对象对应一个相应Descriptor。尽管创建Mesasge对象的过程中没有直接调用Descriptor，但是它却在其中起到了关键桥梁的作用。<span id="more"></span></p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;google/protobuf/descriptor.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;google/protobuf/message.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;string&gt;</span></span></span><br><span class="line"></span><br><span class="line">google::<span class="function">protobuf::Message* <span class="title">createMessage</span><span class="params">(<span class="keyword">const</span> std::string&amp; type_name)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    google::protobuf::Message* message = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="keyword">const</span> google::protobuf::Descriptor* descriptor =</span><br><span class="line">        google::protobuf::DescriptorPool::<span class="built_in">generated_pool</span>()-&gt;<span class="built_in">FindMessageTypeByName</span>(type_name);</span><br><span class="line">    <span class="keyword">if</span> (descriptor)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">const</span> google::protobuf::Message* prototype =</span><br><span class="line">            google::protobuf::MessageFactory::<span class="built_in">generated_factory</span>()-&gt;<span class="built_in">GetPrototype</span>(descriptor);</span><br><span class="line">        <span class="keyword">if</span> (prototype)</span><br><span class="line">        &#123;</span><br><span class="line">            message = prototype-&gt;<span class="built_in">New</span>();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> message;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这样使用type_name传参调用DescriptorPool的FindMessageTypeByName拿到一个const类型的Descriptor，然后再通过Descriptor的GetPrototype获得const类型的Message，最后经由const Message的New即可得到一个可自由读写的Message对象。但是需要注意的是这个对象是动态创建的，调用者在使用完毕后必须动态释放掉它，所以推荐使用shared_ptr管理该对象。</p>
+<h2 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h2><p>知道了如何使用protobuf进行消息类型的自动反射后，下面就来讲讲它是如何实现的。</p>
+<p>首先我们在源码中找DescriptorPool::FindMessageTypeByName的实现：<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">const</span> Descriptor* <span class="title">DescriptorPool::FindMessageTypeByName</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">    <span class="keyword">const</span> string&amp; name)</span> <span class="keyword">const</span> </span>&#123;</span><br><span class="line">  Symbol result = tables_-&gt;<span class="built_in">FindByNameHelper</span>(<span class="keyword">this</span>, name);</span><br><span class="line">  <span class="keyword">return</span> (result.type == Symbol::MESSAGE) ? result.descriptor : <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>发现其中调用了tables_的FindByNameHelper函数，关于table_可以在DescriptorPool定义中找到</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="comment">// This class contains a lot of hash maps with complicated types that</span></span><br><span class="line"><span class="comment">// we&#x27;d like to keep out of the header.</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Tables</span>;</span></span><br><span class="line">scoped_ptr&lt;Tables&gt; tables_;</span><br></pre></td></tr></table></figure>
+<p>table_是一个数据表项的集合（在目前手上的protobuf 2.6版本中是std::map和std::set的集合，其中的HashMap也是由std::map和std::set实现的），这样基本就可以推断出是在这个数据表项集合中通过type name查找得到相应类型的Descriptor。</p>
+<p>这个时候就有个疑问了，这个数据表项集合中的内容是什么时候生成的？</p>
+<p>先来看一个简单的protobuf文件，rpc.proto<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">package blink;</span><br><span class="line"></span><br><span class="line">enum MessageType</span><br><span class="line">&#123;</span><br><span class="line">    REQUEST &#x3D; 1;</span><br><span class="line">    RESPONSE &#x3D; 2;</span><br><span class="line">    ERROR &#x3D; 3;  &#x2F;&#x2F; not used</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">enum ErrorCode</span><br><span class="line">&#123;</span><br><span class="line">    NO_ERROR &#x3D; 0;</span><br><span class="line">    WRONG_PROTO &#x3D; 1;</span><br><span class="line">    NO_SERVICE &#x3D; 2;</span><br><span class="line">    NO_METHOD &#x3D; 3;</span><br><span class="line">    INVALID_REQUEST &#x3D; 4;</span><br><span class="line">    INVALID_RESPONSE &#x3D; 5;</span><br><span class="line">    TIMEOUT &#x3D; 6;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">message RpcMessage</span><br><span class="line">&#123;</span><br><span class="line">    required MessageType type &#x3D; 1;</span><br><span class="line">    required fixed64 id &#x3D; 2;</span><br><span class="line"></span><br><span class="line">    optional string service &#x3D; 3;</span><br><span class="line">    optional string method &#x3D; 4;</span><br><span class="line">    optional bytes request &#x3D; 5;</span><br><span class="line">    optional bytes response &#x3D; 6;</span><br><span class="line">    optional ErrorCode error &#x3D; 7;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>在使用protobuf编译器生成得到的rpc.pb.cc文件中可以看到这样一个函数<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">protobuf_AddDesc_rpc_2eproto</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">static</span> <span class="keyword">bool</span> already_here = <span class="literal">false</span>;</span><br><span class="line">  <span class="keyword">if</span> (already_here) <span class="keyword">return</span>;</span><br><span class="line">  already_here = <span class="literal">true</span>;</span><br><span class="line">  GOOGLE_PROTOBUF_VERIFY_VERSION;</span><br><span class="line"></span><br><span class="line">  ::google::protobuf::DescriptorPool::<span class="built_in">InternalAddGeneratedFile</span>(</span><br><span class="line">    <span class="string">&quot;\n\trpc.proto\022\005blink\&quot;\237\001\n\nRpcMessage\022 \n\004typ&quot;</span></span><br><span class="line">    <span class="string">&quot;e\030\001 \002(\0162\022.blink.MessageType\022\n\n\002id\030\002 \002(\006\022&quot;</span></span><br><span class="line">    <span class="string">&quot;\017\n\007service\030\003 \001(\t\022\016\n\006method\030\004 \001(\t\022\017\n\007requ&quot;</span></span><br><span class="line">    <span class="string">&quot;est\030\005 \001(\014\022\020\n\010response\030\006 \001&quot;</span></span><br><span class="line">    <span class="string">&quot;(\014\022\037\n\005error\030\007 \001&quot;</span></span><br><span class="line">    <span class="string">&quot;(\0162\020.blink.ErrorCode*3\n\013MessageType\022\013\n\007R&quot;</span></span><br><span class="line">    <span class="string">&quot;EQUEST\020\001\022\014\n\010RESPONSE\020\002\022\t\n\005ERROR\020\003*\201\001\n\tEr&quot;</span></span><br><span class="line">    <span class="string">&quot;rorCode\022\014\n\010NO_ERROR\020\000\022\017\n\013WRONG_PROTO\020\001\022\016&quot;</span></span><br><span class="line">    <span class="string">&quot;\n\nNO_SERVICE\020\002\022\r\n\tNO_METHOD\020\003\022\023\n\017INVALID&quot;</span></span><br><span class="line">    <span class="string">&quot;_REQUEST\020\004\022\024\n\020INVALID_RESPONSE\020\005\022\013\n\007TIME&quot;</span></span><br><span class="line">    <span class="string">&quot;OUT\020\006&quot;</span>, <span class="number">365</span>);</span><br><span class="line">  ::google::protobuf::MessageFactory::<span class="built_in">InternalRegisterGeneratedFile</span>(</span><br><span class="line">    <span class="string">&quot;rpc.proto&quot;</span>, &amp;protobuf_RegisterTypes);</span><br><span class="line">  RpcMessage::default_instance_ = <span class="keyword">new</span> <span class="built_in">RpcMessage</span>();</span><br><span class="line">  RpcMessage::default_instance_-&gt;<span class="built_in">InitAsDefaultInstance</span>();</span><br><span class="line">  ::google::protobuf::internal::<span class="built_in">OnShutdown</span>(&amp;protobuf_ShutdownFile_rpc_2eproto);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>可以看到这个函数将上述.proto文件的元信息传入DescriptorPool::InternalAddGeneratedFile了。<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">DescriptorPool::InternalAddGeneratedFile</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">    <span class="keyword">const</span> <span class="keyword">void</span>* encoded_file_descriptor, <span class="keyword">int</span> size)</span> </span>&#123;</span><br><span class="line">  <span class="built_in">InitGeneratedPoolOnce</span>();</span><br><span class="line">  <span class="built_in">GOOGLE_CHECK</span>(generated_database_-&gt;<span class="built_in">Add</span>(encoded_file_descriptor, size));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>进而又传入了generated_database_的Add函数中去了，在源码中找到generated_database_的定义<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line">EncodedDescriptorDatabase* generated_database_ = <span class="literal">NULL</span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">InitGeneratedPoolOnce</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  ::google::protobuf::<span class="built_in">GoogleOnceInit</span>(&amp;generated_pool_init_, &amp;InitGeneratedPool);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">InitGeneratedPool</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  generated_database_ = <span class="keyword">new</span> EncodedDescriptorDatabase;</span><br><span class="line">  generated_pool_ = <span class="keyword">new</span> <span class="built_in">DescriptorPool</span>(generated_database_);</span><br><span class="line"></span><br><span class="line">  internal::<span class="built_in">OnShutdown</span>(&amp;DeleteGeneratedPool);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>这样在之前InternalAddGeneratedFile中就初始化了generated_database_，接着找到generated_database_的类型EncodedDescriptorDatabase及其add的定义。<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">LIBPROTOBUF_EXPORT</span> <span class="title">EncodedDescriptorDatabase</span> :</span> <span class="keyword">public</span> DescriptorDatabase &#123;</span><br><span class="line"> <span class="keyword">public</span>:</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">  <span class="function"><span class="keyword">bool</span> <span class="title">Add</span><span class="params">(<span class="keyword">const</span> <span class="keyword">void</span>* encoded_file_descriptor, <span class="keyword">int</span> size)</span></span>;</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line"> <span class="keyword">private</span>:</span><br><span class="line">  SimpleDescriptorDatabase::DescriptorIndex&lt;pair&lt;<span class="keyword">const</span> <span class="keyword">void</span>*, <span class="keyword">int</span>&gt; &gt; index_;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">EncodedDescriptorDatabase::Add</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">    <span class="keyword">const</span> <span class="keyword">void</span>* encoded_file_descriptor, <span class="keyword">int</span> size)</span> </span>&#123;</span><br><span class="line">  FileDescriptorProto file;</span><br><span class="line">  <span class="keyword">if</span> (file.<span class="built_in">ParseFromArray</span>(encoded_file_descriptor, size)) &#123;</span><br><span class="line">    <span class="keyword">return</span> index_.<span class="built_in">AddFile</span>(file, <span class="built_in">make_pair</span>(encoded_file_descriptor, size));</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="built_in">GOOGLE_LOG</span>(ERROR) &lt;&lt; <span class="string">&quot;Invalid file descriptor data passed to &quot;</span></span><br><span class="line">                  <span class="string">&quot;EncodedDescriptorDatabase::Add().&quot;</span>;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>之前的.proto元数据传入了index_成员的AddFile函数中，而index_的类型DescriptorIndex&lt;pair<const void*, int> &gt;的定义是:<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Value&gt;</span><br><span class="line">  <span class="class"><span class="keyword">class</span> <span class="title">DescriptorIndex</span> &#123;</span></span><br><span class="line">   <span class="keyword">public</span>:</span><br><span class="line">    <span class="comment">// Helpers to recursively add particular descriptors and all their contents</span></span><br><span class="line">    <span class="comment">// to the index.</span></span><br><span class="line">    <span class="function"><span class="keyword">bool</span> <span class="title">AddFile</span><span class="params">(<span class="keyword">const</span> FileDescriptorProto&amp; file,</span></span></span><br><span class="line"><span class="function"><span class="params">                 Value value)</span></span>;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line"></span><br><span class="line">   <span class="keyword">private</span>:</span><br><span class="line">    map&lt;string, Value&gt; by_name_;</span><br><span class="line">    map&lt;string, Value&gt; by_symbol_;</span><br><span class="line">    map&lt;pair&lt;string, <span class="keyword">int</span>&gt;, Value&gt; by_extension_;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure><br>果然，DescriptorIndex实际上是一些数据表项集合的包装，也就是说之前的.proto元数据存入了数据表项集合中。</p>
+<p>也就是说在protobuf生成的rpc.pb.cc文件中的protobuf_AddDesc_rpc_2eproto函数可以将.proto的元数据存入数据集合中。</p>
+<p>接着，我们可以在rpc.pb.cc中发现下面一段代码：<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">StaticDescriptorInitializer_rpc_2eproto</span> &#123;</span></span><br><span class="line">  <span class="built_in">StaticDescriptorInitializer_rpc_2eproto</span>() &#123;</span><br><span class="line">    <span class="built_in">protobuf_AddDesc_rpc_2eproto</span>();</span><br><span class="line">  &#125;</span><br><span class="line">&#125; static_descriptor_initializer_rpc_2eproto_;</span><br></pre></td></tr></table></figure><br>在全局对象static_descriptor_initializer_rpc_2eproto_的构造函数中会调用protobuf_AddDesc_rpc_2eproto函数。我们知道C++全局对象的初始化是在进入main函数之前进行的，也就是说在程序一开始的时候就已经将.proto文件中的元信息导入到了数据表项集合中去了，当然前提是该程序必须链接了rpc.pb.cc。</p>
+<p>如此，protobuf的自动反射就可以正常的运转了。</p>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><ol>
+<li>Google Developers. <a target="_blank" rel="noopener" href="https://developers.google.com/protocol-buffers/">Protocol Buffers</a></li>
+<li>陈硕. <a target="_blank" rel="noopener" href="http://blog.csdn.net/solstice/article/details/6300108">一种自动反射消息类型的 Google Protobuf 网络传输方案, 2011</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2015/03/08/caesar-cipher/" rel="prev" title="凯撒密码">
+      <i class="fa fa-chevron-left"></i> 凯撒密码
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2015/03/18/encoding-and-decoding-of-google-protocol-buffer/" rel="next" title="Google Protocol Buffer的编解码原理">
+      Google Protocol Buffer的编解码原理 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%87%AA%E5%8A%A8%E5%8F%8D%E5%B0%84"><span class="nav-number">1.</span> <span class="nav-text">自动反射</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8E%9F%E7%90%86"><span class="nav-number">2.</span> <span class="nav-text">原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE"><span class="nav-number">3.</span> <span class="nav-text">参考文献</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Li Yuan"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">Li Yuan</p>
+  <div class="site-description" itemprop="description">种一棵树最好的时间是十年前，其次是现在</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">29</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="mailto:liyuan989@gmail.com" title="Email → mailto:liyuan989@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>Email</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://cn.linkedin.com/in/liyuan989" title="Linkedin → https:&#x2F;&#x2F;cn.linkedin.com&#x2F;in&#x2F;liyuan989" rel="noopener" target="_blank"><i class="fab fa-linkedin fa-fw"></i>Linkedin</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/liyuan989" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;liyuan989" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/origin-989" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;origin-989" rel="noopener" target="_blank"><i class="fa fa-globe fa-fw"></i>Zhihu</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="http://weibo.com/liyuan989" title="Weibo → http:&#x2F;&#x2F;weibo.com&#x2F;liyuan989" rel="noopener" target="_blank"><i class="fab fa-weibo fa-fw"></i>Weibo</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2014 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Li Yuan</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

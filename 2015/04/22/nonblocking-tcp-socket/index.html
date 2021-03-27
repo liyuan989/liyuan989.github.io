@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico">
+  <link rel="mask-icon" href="/favicon.ico" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"originlee.com","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"right","display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="套接字的默认状态是阻塞的。如果一个套接字不能立即完成相应的调用，那么该线程就会被投入睡眠，等待相应的操作完成。阻塞一个套接字的操作可能是输入操作、输出操作、接受外来连接、发起外出连接这四种操作中的一种。如果把套接字改为非阻塞的话，这些操作就会变的不一样了。  输入操作，包括read、readv、recv、recvfrom和recvmsg这五个函数（aio系列函数除外，其为异步IO）。对于非阻塞的套">
+<meta property="og:type" content="article">
+<meta property="og:title" content="非阻塞TCP套接字的要点">
+<meta property="og:url" content="http://originlee.com/2015/04/22/nonblocking-tcp-socket/index.html">
+<meta property="og:site_name" content="Less is more">
+<meta property="og:description" content="套接字的默认状态是阻塞的。如果一个套接字不能立即完成相应的调用，那么该线程就会被投入睡眠，等待相应的操作完成。阻塞一个套接字的操作可能是输入操作、输出操作、接受外来连接、发起外出连接这四种操作中的一种。如果把套接字改为非阻塞的话，这些操作就会变的不一样了。  输入操作，包括read、readv、recv、recvfrom和recvmsg这五个函数（aio系列函数除外，其为异步IO）。对于非阻塞的套">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2015-04-22T12:13:08.000Z">
+<meta property="article:modified_time" content="2016-06-19T17:21:44.000Z">
+<meta property="article:author" content="Li Yuan">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://originlee.com/2015/04/22/nonblocking-tcp-socket/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>非阻塞TCP套接字的要点 | Less is more</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Less is more</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://originlee.com/2015/04/22/nonblocking-tcp-socket/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="Li Yuan">
+      <meta itemprop="description" content="种一棵树最好的时间是十年前，其次是现在">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Less is more">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          非阻塞TCP套接字的要点
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2015-04-22 20:13:08" itemprop="dateCreated datePublished" datetime="2015-04-22T20:13:08+08:00">2015-04-22</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/" itemprop="url" rel="index"><span itemprop="name">网络编程</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>套接字的默认状态是阻塞的。如果一个套接字不能立即完成相应的调用，那么该线程就会被投入睡眠，等待相应的操作完成。阻塞一个套接字的操作可能是输入操作、输出操作、接受外来连接、发起外出连接这四种操作中的一种。如果把套接字改为非阻塞的话，这些操作就会变的不一样了。</p>
+<ul>
+<li>输入操作，包括read、readv、recv、recvfrom和recvmsg这五个函数（aio系列函数除外，其为异步IO）。对于非阻塞的套接字，如果输入操作不能被满足（TCP套接字默认是至少有一个字节的数据可读，UDP套接字默认是有一个完整的数据报可读），相应的输入调用将立即返回EWOULDBLOCK错误（在Linux上EWOULDBLOCK与EAGAIN等价）</li>
+<li>输出操作，包括write、writev、send、sendto和sendmsg这5个函数（aio系列函数除外，其为异步IO）。对于非阻塞的TCP套接字，如果其发送缓冲区根本没有空间，相关函数调用将立即返回EWOULDBLOCK错误。如果其发送缓冲区中有一些空间单不足以装下所有用户数据，返回值将是内核能够从用户缓冲区复制到内核发送缓冲区的字节数，也称「不足计数」。</li>
+<li>接受外来连接，即accept函数。对于非阻塞的TCP套接字，如果调用accept函数但无连接到达，则立即返回一个EWOULDBLOCK错误。</li>
+<li>发起外出连接，即connect函数。对于非阻塞的TCP套接字，如果调用connect并且连接不能立即建立，那么连接的建立可以照样发起，不过会返回一个EINPROGRESS错误。但此时并不能确定是连接发生错误还是已成功建立连接，具体内容后文再讨论。</li>
+</ul>
+<h2 id="connect"><a href="#connect" class="headerlink" title="connect"></a>connect</h2><p>在非阻塞TCP套接字上调用connect函数，将立即返回一个EINPROGRESS错误，不过已经发起的TCP三路握手继续进行（即调用connect使套接字发送SYN分节后立即返回EINPROGRESS）。然后就可以用epoll/poll/select检测该连接的成功或者失败。</p>
+<p>相对于阻塞connect，非阻塞connect有下面几个用途：</p>
+<ol>
+<li>可以在TCP三次握手的时候进行其他操作。因为客户发生一个SYN分节，然后等到收到服务端的ACK分节后，客户端的连接才建立起来，这其中经过了一个RTT时间。但是RTT的实际波动范围较大，从局域网的几毫秒到广域网的几秒，非阻塞connect可以把这段时间利用起来处理其他事物。</li>
+<li>可以同时建立多个连接。</li>
+<li>可以通过epoll/poll/select设置超时时间。默认的阻塞connect的超时一般为75秒，如果想要设置更短的超时时间就可以通过非阻塞connect配合IO复用来完成。<span id="more"></span>
+</li>
+</ol>
+<p>非阻塞套接字不像阻塞套接字那样简单，有一些细节需要注意和处理：</p>
+<ul>
+<li>尽管套接字是非阻塞的，如果连接的对端服务器在同一个主机上的话，那么调用connect时，连接通常是立即建立而不是返回EINPROGRESS错误，所以编程的时候得处理这种情形。</li>
+<li>原则上说，当非阻塞connect与IO复用配合时是这样的：当建立连接成功时，描述符可写，当建立连接遇到错误时，描述变得既可写又可读。但是这就带来一个问题，假设在调用epoll_wait/poll/select之前连接已经建立并且已经收到了对端发送过来的数据（这是完全有可能的），这就和建立连接遇到错误时的读写条件一致了，都是既可读也可写。所以个人推荐的判断套件字连接建立成功的条件时，调用getsockopt检查获取套接字上的待处理错误，若没有错误则代表连接建立成功。</li>
+</ul>
+<p>另外关于connect，在<a target="_blank" rel="noopener" href="http://linux.die.net/man/2/connect">man</a>手册上也提到了可以使用getsockopt检查SO_ERROR选项返回的值为0来判断连接的成功建立：</p>
+<blockquote>
+<p>The socket is nonblocking and the connection cannot be completed immediately. It is possible to <em><strong><a target="_blank" rel="noopener" href="http://linux.die.net/man/2/select">select</a></strong>(2)</em> or <em><strong><a target="_blank" rel="noopener" href="http://linux.die.net/man/2/poll">poll</a></strong>(2)</em> for completion by selecting the socket for writing. After <em><strong><a target="_blank" rel="noopener" href="http://linux.die.net/man/2/select">select</a></strong>(2)</em> indicates writability, use <em><strong><a target="_blank" rel="noopener" href="http://linux.die.net/man/2/getsockopt">getsockopt</a></strong>(2)</em> to read the<strong>SO_ERROR</strong> option at level <strong>SOL_SOCKET</strong> to determine whether <strong>connect</strong>() completed successfully (<strong>SO_ERROR</strong> is zero) or unsuccessfully (<strong>SO_ERROR</strong> is one of the usual error codes listed here, explaining the reason for the failure).</p>
+</blockquote>
+<p>需要注意的是，通过getsockopt的SO_ERROR选项返回的值为0来判断操作成功只有这一种情形是正确的。其他情况这样判断是不可取的，是未定义行为。</p>
+<p>另外对于阻塞的connect，当被系统调用或者信号中断，且内核不能自动重启的话，connect将EINTR，这个时候不能再次调用connect继续等待未完成的连接，这样做将回返回EADDRINUSE错误。这种情况，只能关闭该套接字，然后再通过socket获取新的套接字重新调用connect发起新的连接，或者通过非阻塞connect配合IO复用避免遇到这种情形。</p>
+<h2 id="accept"><a href="#accept" class="headerlink" title="accept"></a>accept</h2><p>当accept和IO复用epoll/poll/select配合时，如果有连接已经完成可以被accept时，将触发监听描述符的可读事情。所以，似乎把accept设置为非阻塞没什么用处，因为IO复用已经通知有新的连接完成了，所以再accept的时候就不会阻塞了。</p>
+<p>我们可以想象一下下面这种情形：</p>
+<ol>
+<li>服务端使用阻塞的accept配合IO复用接受新连接，且服务端负载较高。</li>
+<li>某客户向服务端发起一个TCP连接，当连接建立成功后立即通过setsockopt设置SOL_LINGER选项使得close操作发送RST分节，设置完成后立即调用close。</li>
+<li>由于服务器端负载较高，IO复用的监听套接字可读操作就绪时没能立刻调用accept，在调用accept之前服务端主机已经收到了来自客户的RST分节，所以该连接被从内核中已完成的连接队列中删除，然后当服务器再调用accept时，由于没有已完成的连接，accept将导致该线程阻塞，由于accept的阻塞导致无法执行循环中的epoll_wait/poll/select，后续的到来的新连接将无法被通知，于是该线程就永远阻塞下去。</li>
+</ol>
+<p>所以解决的办法就是把监听套接字设为非阻塞，再用accept配合IO复用。然后对于accept的返回值，忽略EWOULDBLOCK（BSD中的客户终止连接）、EAGAIN、ECONNABORTED（POSIX实现中的客户终止连接）、EPROTO（SVR4中的客户终止连接）、EINTR（被信号中断）。</p>
+<h2 id="输入和输出"><a href="#输入和输出" class="headerlink" title="输入和输出"></a>输入和输出</h2><p>一般对于非阻塞套接字的输入读取操作来说，可以忽略返回的错误或者将具体的错误打印到log中即可。其他具体的业务逻辑需具体对待。对于向一个收到RST分节的套接字进行读操作（正常关闭是第一次read返回0，第二次read返回ECONNRESET），若是采用的select，则需判断读操作的返回是否为ECONNRESET，若采用epoll/poll则无需处理，因为会触发EPOLLHUP/POLLHUP事件。</p>
+<p>由于向一个收到RST分节的套接字进行写操作会导致内核向该进程发送sigpipe信号，所以一般最好在程序一开始就忽略掉该信号，然后通过检查写操作的返回值是否为EPIPE来判断此事件的发生。另外建议检查写操作返回值是否为ECONNRESET来判断向已关闭写的套接字的写操作，其他情况可类似与输入操作的处理，忽略返回错误或者将具体错误打印到log信息中。</p>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><ol>
+<li>W.Richard Stevens. <a target="_blank" rel="noopener" href="http://book.douban.com/subject/4859464/">UNIX网络编程 卷1：套接字联网API（第3版）, 2010</a></li>
+<li>Linux man page. <a target="_blank" rel="noopener" href="http://linux.die.net/man/2/connect">connect(2)</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2015/04/18/difference-between-block-nonblock-and-sync-async/" rel="prev" title="阻塞非阻塞与同步异步区别">
+      <i class="fa fa-chevron-left"></i> 阻塞非阻塞与同步异步区别
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2015/05/02/cxx-sfinae/" rel="next" title="C++的SFINAE">
+      C++的SFINAE <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#connect"><span class="nav-number">1.</span> <span class="nav-text">connect</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#accept"><span class="nav-number">2.</span> <span class="nav-text">accept</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BE%93%E5%85%A5%E5%92%8C%E8%BE%93%E5%87%BA"><span class="nav-number">3.</span> <span class="nav-text">输入和输出</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE"><span class="nav-number">4.</span> <span class="nav-text">参考文献</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Li Yuan"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">Li Yuan</p>
+  <div class="site-description" itemprop="description">种一棵树最好的时间是十年前，其次是现在</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">29</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="mailto:liyuan989@gmail.com" title="Email → mailto:liyuan989@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>Email</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://cn.linkedin.com/in/liyuan989" title="Linkedin → https:&#x2F;&#x2F;cn.linkedin.com&#x2F;in&#x2F;liyuan989" rel="noopener" target="_blank"><i class="fab fa-linkedin fa-fw"></i>Linkedin</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/liyuan989" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;liyuan989" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/origin-989" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;origin-989" rel="noopener" target="_blank"><i class="fa fa-globe fa-fw"></i>Zhihu</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="http://weibo.com/liyuan989" title="Weibo → http:&#x2F;&#x2F;weibo.com&#x2F;liyuan989" rel="noopener" target="_blank"><i class="fab fa-weibo fa-fw"></i>Weibo</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2014 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Li Yuan</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

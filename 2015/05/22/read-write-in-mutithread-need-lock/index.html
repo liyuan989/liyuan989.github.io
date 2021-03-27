@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico">
+  <link rel="mask-icon" href="/favicon.ico" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"originlee.com","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"right","display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="在现代C++中，通过使用shared_ptr这样的智能指针能够很好的降低内存泄漏的可能性，但是在多线程中无保护的读写shared_ptr则有可能带来race condition的情况。 对此，boost官方文档是这样描述的：  shared_ptr 对象提供与内建类型一样的线程安全级别。一个 shared_ptr 实例可以同时被多个线程“读”（仅使用不变操作进行访问）。不同的 shared_ptr">
+<meta property="og:type" content="article">
+<meta property="og:title" content="多线程读写shared_ptr需要加锁">
+<meta property="og:url" content="http://originlee.com/2015/05/22/read-write-in-mutithread-need-lock/index.html">
+<meta property="og:site_name" content="Less is more">
+<meta property="og:description" content="在现代C++中，通过使用shared_ptr这样的智能指针能够很好的降低内存泄漏的可能性，但是在多线程中无保护的读写shared_ptr则有可能带来race condition的情况。 对此，boost官方文档是这样描述的：  shared_ptr 对象提供与内建类型一样的线程安全级别。一个 shared_ptr 实例可以同时被多个线程“读”（仅使用不变操作进行访问）。不同的 shared_ptr">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://originlee.com/images/blog-shared_ptr_1.png">
+<meta property="og:image" content="http://originlee.com/images/blog-shared_ptr_2.png">
+<meta property="og:image" content="http://originlee.com/images/blog-shared_ptr_3.png">
+<meta property="og:image" content="http://originlee.com/images/blog-shared_ptr_4.png">
+<meta property="og:image" content="http://originlee.com/images/blog-shared_ptr_5.png">
+<meta property="og:image" content="http://originlee.com/images/blog-shared_ptr_6.png">
+<meta property="og:image" content="http://originlee.com/images/blog-shared_ptr_7.png">
+<meta property="og:image" content="http://originlee.com/images/blog-shared_ptr_8.png">
+<meta property="og:image" content="http://originlee.com/images/blog-shared_ptr_9.png">
+<meta property="og:image" content="http://originlee.com/images/blog-shared_ptr_10.png">
+<meta property="article:published_time" content="2015-05-22T13:52:15.000Z">
+<meta property="article:modified_time" content="2019-03-22T14:55:50.298Z">
+<meta property="article:author" content="Li Yuan">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://originlee.com/images/blog-shared_ptr_1.png">
+
+<link rel="canonical" href="http://originlee.com/2015/05/22/read-write-in-mutithread-need-lock/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>多线程读写shared_ptr需要加锁 | Less is more</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Less is more</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://originlee.com/2015/05/22/read-write-in-mutithread-need-lock/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="Li Yuan">
+      <meta itemprop="description" content="种一棵树最好的时间是十年前，其次是现在">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Less is more">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          多线程读写shared_ptr需要加锁
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2015-05-22 21:52:15" itemprop="dateCreated datePublished" datetime="2015-05-22T21:52:15+08:00">2015-05-22</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C++</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>在现代C++中，通过使用shared_ptr这样的智能指针能够很好的降低内存泄漏的可能性，但是在多线程中无保护的读写shared_ptr则有可能带来race condition的情况。</p>
+<p>对此，<a target="_blank" rel="noopener" href="http://cpp.ezbty.org//myfiles/boost/libs/smart_ptr/shared_ptr.htm#ThreadSafety">boost官方文档</a>是这样描述的：</p>
+<blockquote>
+<p><strong>shared_ptr</strong> 对象提供与内建类型一样的线程安全级别。一个 <strong>shared_ptr</strong> 实例可以同时被多个线程“读”（仅使用不变操作进行访问）。不同的 <strong>shared_ptr</strong> 实例可以同时被多个线程“写入”（使用类似<strong>operator=</strong> 或 <strong>reset</strong> 这样的可变操作进行访问）（即使这些实例是拷贝，而且共享下层的引用计数）。</p>
+<p>从 Boost 版本 1.33.0 开始，<strong>shared_ptr</strong> 在以下平台上使用了 lock-free 实现：</p>
+<ul>
+<li>GNU GCC on x86 or x86-64;</li>
+<li>GNU GCC on IA64;</li>
+<li>Metrowerks CodeWarrior on PowerPC;</li>
+<li>GNU GCC on PowerPC;</li>
+<li>Windows.<br>可以看到现在版本的shared_ptr本身的引用计数是安全并且无锁的，但是shard_ptr对象本身则不是，为什么呢？</li>
+</ul>
+</blockquote>
+<p>简单来说，因为shared_ptr有不止引用计数一个数据成员，它有指向引用计数对象的指针和指向实际数据的指针这两个成员，虽然引用计数本身是原子化的，但是两个成员一起作为一个对象在多线程环境下读写时，就不能原子化了。</p>
+<h2 id="数据结构模型"><a href="#数据结构模型" class="headerlink" title="数据结构模型"></a>数据结构模型</h2><p><img src="/images/blog-shared_ptr_1.png" alt=""></p>
+<p>shared_ptr是引用计数类型的智能指针，并且绝大多数实现都是存放在堆上的空间里。</p>
+<p>具体来说，一个shared_ptr<Foo>包含两个成员，一个是指向实际数据Foo的指针，一个是指向堆上的引用计数对象的指针ref_count。引用计数对象有多个数据成员，具体如上图所示，其中allocator和deleter是可选的。</p>
+<span id="more"></span>
+<h2 id="多线程无保护读写shared-ptr的问题"><a href="#多线程无保护读写shared-ptr的问题" class="headerlink" title="多线程无保护读写shared_ptr的问题"></a>多线程无保护读写shared_ptr的问题</h2><p>为了简单起见，后文图例中的引用计数对象均表示为一个引用计数数据。</p>
+<p>下面是shared_ptr<Foo> x(new Foo)的内存数据结构：</p>
+<p><img src="/images/blog-shared_ptr_2.png" alt=""></p>
+<p>当我们执行语句shared_ptr<Foo> y = x，期望的结果对应于下面的内存数据结构.</p>
+<p><img src="/images/blog-shared_ptr_3.png" alt=""></p>
+<p>但是在多线程情况下读写，ptr和cnt两个成员的拷贝不能原子化，会出现race condition。拷贝一个shared_ptr对象分下面两个步骤进行，且不能原子化。</p>
+<p>1）拷贝指向实际数据的指针ptr。</p>
+<p><img src="/images/blog-shared_ptr_4.png" alt=""></p>
+<p>2）拷贝指向引用计数对象的指针cnt。</p>
+<p><img src="/images/blog-shared_ptr_5.png" alt=""></p>
+<p>至于两个步骤的先后顺序与具体的实现有关，但大部分都是先1后2。因为这两个步骤不能原子化，若线程切换发生在两个步骤的中间时刻，就会出现race condition。</p>
+<h2 id="实例"><a href="#实例" class="headerlink" title="实例"></a>实例</h2><p>假设有3个shared_ptr<Foo>对象x、g、n：<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">shared_ptr&lt;Foo&gt; <span class="title">g</span><span class="params">(<span class="keyword">new</span> Foo)</span></span>;</span><br><span class="line">shared_ptr&lt;Foo&gt; x;</span><br><span class="line"><span class="function">shared_ptr&lt;Foo&gt; <span class="title">n</span><span class="params">(<span class="keyword">new</span> Foo)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// in thread A</span></span><br><span class="line">x = g;</span><br><span class="line"></span><br><span class="line"><span class="comment">// in trhead B</span></span><br><span class="line">g = n;</span><br></pre></td></tr></table></figure><br>1）初始状态。</p>
+<p><img src="/images/blog-shared_ptr_6.png" alt=""></p>
+<p>2）线程A执行x = g，但是只执行了一半（拷贝指针ptr），然后发生线程切换（由线程A切换到线程B）。</p>
+<p><img src="/images/blog-shared_ptr_7.png" alt=""></p>
+<p>3）线程B执行g = n，完成了拷贝的前一部分（拷贝指针ptr）。</p>
+<p><img src="/images/blog-shared_ptr_8.png" alt=""></p>
+<p>4）线程B继续执行g = n，完成了拷贝的后一部分（拷贝引用计数指针cnt），然后发生线程切换（由线程B切换回线程A），但此时Foo1对象已被销毁（因为Foo1的引用计数减为0），x中的ptr成为了空悬指针。</p>
+<p><img src="/images/blog-shared_ptr_9.png" alt=""></p>
+<p>5）返回线程B，继续执行x = g，完成后半部分的拷贝（拷贝引用计数指针cnt），原本x的cnt指针应该指向Foo1对象所属的引用计数对象，但由于Foo1对象已经被销毁的缘故，不仅x的cnt指针错误的指向了Foo2对象所属的引用计数对象，还使得Foo2对象的引用计数也错误的增加了1个计数。</p>
+<p><img src="/images/blog-shared_ptr_10.png" alt=""></p>
+<h2 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h2><p>由于shared_ptr的两个数据成员不能读写原子化，所以在多线程环境读写时，一定要在mutex的保护下进行，否则就有可能发生race condition，从而出现意想不到的的结果。</p>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><ol>
+<li>boost中文手册. <a target="_blank" rel="noopener" href="http://cpp.ezbty.org//myfiles/boost/libs/smart_ptr/shared_ptr.htm#ThreadSafety">shared_ptr</a><br>&nbsp;</li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2015/05/09/partition-algorithm/" rel="prev" title="乱谈partition算法">
+      <i class="fa fa-chevron-left"></i> 乱谈partition算法
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2016/02/03/summary-2015/" rel="next" title="悄然溜走的2015">
+      悄然溜走的2015 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E6%A8%A1%E5%9E%8B"><span class="nav-number">1.</span> <span class="nav-text">数据结构模型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A4%9A%E7%BA%BF%E7%A8%8B%E6%97%A0%E4%BF%9D%E6%8A%A4%E8%AF%BB%E5%86%99shared-ptr%E7%9A%84%E9%97%AE%E9%A2%98"><span class="nav-number">2.</span> <span class="nav-text">多线程无保护读写shared_ptr的问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E4%BE%8B"><span class="nav-number">3.</span> <span class="nav-text">实例</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BB%93%E8%AF%AD"><span class="nav-number">4.</span> <span class="nav-text">结语</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE"><span class="nav-number">5.</span> <span class="nav-text">参考文献</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Li Yuan"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">Li Yuan</p>
+  <div class="site-description" itemprop="description">种一棵树最好的时间是十年前，其次是现在</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">29</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="mailto:liyuan989@gmail.com" title="Email → mailto:liyuan989@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>Email</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://cn.linkedin.com/in/liyuan989" title="Linkedin → https:&#x2F;&#x2F;cn.linkedin.com&#x2F;in&#x2F;liyuan989" rel="noopener" target="_blank"><i class="fab fa-linkedin fa-fw"></i>Linkedin</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/liyuan989" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;liyuan989" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/origin-989" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;origin-989" rel="noopener" target="_blank"><i class="fa fa-globe fa-fw"></i>Zhihu</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="http://weibo.com/liyuan989" title="Weibo → http:&#x2F;&#x2F;weibo.com&#x2F;liyuan989" rel="noopener" target="_blank"><i class="fab fa-weibo fa-fw"></i>Weibo</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2014 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Li Yuan</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

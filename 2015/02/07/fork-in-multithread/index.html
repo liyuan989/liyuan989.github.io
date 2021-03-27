@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico">
+  <link rel="mask-icon" href="/favicon.ico" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"originlee.com","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"right","display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="1. 前言在单核时代，大家所编写的程序都是单进程&#x2F;单线程程序。随着计算机硬件技术的发展，进入了多核时代后，为了降低响应时间，重复充分利用多核cpu的资源，使用多进程编程的手段逐渐被人们接受和掌握。然而因为创建一个进程代价比较大，多线程编程的手段也就逐渐被人们认可和喜爱了。 记得在我刚刚学习线程进程的时候就想，为什么很少见人把多进程和多线程结合起来使用呢，把二者结合起来不是更好吗？现在想想当初真是t">
+<meta property="og:type" content="article">
+<meta property="og:title" content="谨慎使用多线程中的fork">
+<meta property="og:url" content="http://originlee.com/2015/02/07/fork-in-multithread/index.html">
+<meta property="og:site_name" content="Less is more">
+<meta property="og:description" content="1. 前言在单核时代，大家所编写的程序都是单进程&#x2F;单线程程序。随着计算机硬件技术的发展，进入了多核时代后，为了降低响应时间，重复充分利用多核cpu的资源，使用多进程编程的手段逐渐被人们接受和掌握。然而因为创建一个进程代价比较大，多线程编程的手段也就逐渐被人们认可和喜爱了。 记得在我刚刚学习线程进程的时候就想，为什么很少见人把多进程和多线程结合起来使用呢，把二者结合起来不是更好吗？现在想想当初真是t">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2015-02-07T03:23:00.000Z">
+<meta property="article:modified_time" content="2016-06-19T17:21:44.000Z">
+<meta property="article:author" content="Li Yuan">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://originlee.com/2015/02/07/fork-in-multithread/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>谨慎使用多线程中的fork | Less is more</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Less is more</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://originlee.com/2015/02/07/fork-in-multithread/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="Li Yuan">
+      <meta itemprop="description" content="种一棵树最好的时间是十年前，其次是现在">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Less is more">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          谨慎使用多线程中的fork
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2015-02-07 11:23:00" itemprop="dateCreated datePublished" datetime="2015-02-07T11:23:00+08:00">2015-02-07</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%A4%9A%E7%BA%BF%E7%A8%8B/" itemprop="url" rel="index"><span itemprop="name">多线程</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="1-前言"><a href="#1-前言" class="headerlink" title="1. 前言"></a>1. 前言</h2><p>在单核时代，大家所编写的程序都是单进程/单线程程序。随着计算机硬件技术的发展，进入了多核时代后，为了降低响应时间，重复充分利用多核cpu的资源，使用多进程编程的手段逐渐被人们接受和掌握。然而因为创建一个进程代价比较大，多线程编程的手段也就逐渐被人们认可和喜爱了。</p>
+<p>记得在我刚刚学习线程进程的时候就想，为什么很少见人把多进程和多线程结合起来使用呢，把二者结合起来不是更好吗？现在想想当初真是too young too simple，后文就主要讨论一下这个问题。</p>
+<h2 id="2-进程与线程模型"><a href="#2-进程与线程模型" class="headerlink" title="2. 进程与线程模型"></a>2. 进程与线程模型</h2><p>进程的经典定义就是一个执行中的程序的实例。系统中的每个程序都是运行在某个进程的context中的。context是由程序正确运行所需的状态组成的，这个状态包括存放在存储器中的程序的代码和数据，它的栈、通用目的寄存器的内容、程序计数器（pc）、环境变量以及打开的文件描述符的集合。</p>
+<p>进程主要提供给上层的应用程序两个抽象：</p>
+<ul>
+<li>一个独立的逻辑控制流，它提供一个假象，好像我们程序独占的使用处理器。</li>
+<li>一个私有的虚拟地址空间，它提供一个假象，好像我们的程序独占的使用存储器系统。</li>
+</ul>
+<p>线程，就是运行在进程context中的逻辑流。线程由内核自动调度。每个线程都有它自己的线程context，包括一个唯一的整数线程id、栈、栈指针、程序计数器（pc）、通用目的寄存器和条件码。每个线程和运行在同一进程内的其他线程一起共享进程context的剩余部分。这包括整个用户虚拟地址空间，它是由只读文本（代码）、读/写数据、堆以及所有的共享库代码和数据区域组成。线程也同样共享打开文件的集合。</p>
+<p>即进程是资源管理的最小单位，而线程是程序执行的最小单位。</p>
+<p>在linux系统中，posix线程可以「看做」为一种轻量级的进程，pthread_create创建线程和fork创建进程都是在内核中调用__clone函数创建的，只不过创建线程或进程的时候选项不同，比如是否共享虚拟地址空间、文件描述符等。</p>
+<h2 id="3-fork与多线程"><a href="#3-fork与多线程" class="headerlink" title="3. fork与多线程"></a>3. fork与多线程</h2><p>我们知道通过fork创建的一个子进程几乎但不完全与父进程相同。子进程得到与父进程用户级虚拟地址空间相同的（但是独立的）一份拷贝，包括文本、数据和bss段、堆以及用户栈等。子进程还获得与父进程任何打开文件描述符相同的拷贝，这就意味着子进程可以读写父进程中任何打开的文件，父进程和子进程之间最大的区别在于它们有着不同的pid。</p>
+<p>但是有一点需要注意的是，在linux中，fork的时候只复制当前线程到子进程，在<a target="_blank" rel="noopener" href="http://linux.die.net/man/2/fork">fork(2)-Linux Man Page</a>中有着这样一段相关的描述：</p>
+<blockquote>
+<p>the child process is <strong>created with a single thread</strong>–the one that called fork. the entire virtual address space of the parent is replicated in the child, including the states of mutexes, condition variables, and other pthreads objects; the use of pthread_atfork(3) may be helpful for dealing with problems that this can cause.</p>
+</blockquote>
+<p>也就是说除了调用fork的线程外，其他线程在子进程中“蒸发”了。</p>
+<p>这就是多线程中fork所带来的一切问题的根源所在了。<span id="more"></span></p>
+<h2 id="4-互斥锁"><a href="#4-互斥锁" class="headerlink" title="4. 互斥锁"></a>4. 互斥锁</h2><p>互斥锁，就是多线程fork大部分问题的关键部分。</p>
+<p>在大多数操作系统上，为了性能的因素，锁基本上都是实现在用户态的而非内核态（因为在用户态实现最方便，基本上就是通过原子操作或者之前文章中提到的memory barrier实现的），所以调用fork的时候，会复制父进程的所有锁到子进程中。</p>
+<p>问题就出在这了。从操作系统的角度上看，对于每一个锁都有它的持有者，即对它进行lock操作的线程。假设在fork之前，一个线程对某个锁进行的lock操作，即持有了该锁，然后另外一个线程调用了fork创建子进程。可是在子进程中持有那个锁的线程却”消失”了，从子进程的角度来看，这个锁被“永久”的上锁了，因为它的持有者“蒸发”了。</p>
+<p>那么如果子进程中的任何一个线程对这个已经被持有的锁进行lock操作话，就会发生死锁。</p>
+<p>当然了有人会说可以在fork之前，让准备调用fork的线程获取所有的锁，然后再在fork出的子进程的中释放每一个锁。先不说现实中的业务逻辑以及其他因素允不允许这样做，这种做法会带来一个问题，那就是隐含了一种上锁的先后顺序，如果次序和平时不同，就会发生死锁。</p>
+<p>如果你说自己一定可以按正确的顺序上锁而不出错的话，还有一个隐含的问题是你所不能控制的，那就是库函数。</p>
+<p>因为你不能确定你所用到的所有库函数都不会使用共享数据，即他们都是完全线程安全的。有相当一部分线程安全的库函数都是在内部通过持有互斥锁的方式来实现的，比如几乎所有程序都会用到的c/c++标准库函数malloc、printf等等。</p>
+<p>比如一个多线程程序在fork之前难免会分配动态内存，这就必然会用到malloc函数；而在fork之后的子进程中也难免要分配动态内存，这也同样要用到malloc，可这却是不安全的，因为有可能malloc内部的锁已经在fork之前被某一个线程所持有了，而那个线程却在子进程中消失了。</p>
+<h2 id="5-exec与文件描述符"><a href="#5-exec与文件描述符" class="headerlink" title="5. exec与文件描述符"></a>5. exec与文件描述符</h2><p>按照上文的分析，似乎多线程中在fork出的子进程中立刻调用exec函数是唯一明智的选择了，其实即使这样做还是有一点不足。因为子进程会继承父进程中所有已打开的文件描述符，所以在执行exec之前子进程仍然可以读写父进程中的文件，但如果你不希望子进程能读写父进程里的某个已打开的文件该怎么办？</p>
+<p>或许fcntl设置文件属性是一种办法：<br><figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">int</span> fd = open(<span class="string">&quot;file&quot;</span>, O_RDWR | O_CREAT);</span><br><span class="line"><span class="keyword">if</span> (fd &lt; <span class="number">0</span>)</span><br><span class="line">&#123;</span><br><span class="line">    perror(<span class="string">&quot;open&quot;</span>);</span><br><span class="line">&#125;</span><br><span class="line">fcntl(fd, F_SETFD, FD_CLOEXEC);</span><br></pre></td></tr></table></figure><br>但是如果在open打开file文件之后，调用fcntl设置CLOEXEC属性之前有其他线程fork出了子进程了的话，这个子进程仍然是可以读写file文件。如果用锁的话，就又回到了上文所讨论的情况了。</p>
+<p>从linux 2.6.23版本的内核开始，我们可以在open中设置O_CLOEXEC标志了，相当于“打开文件再设置CLOEXEC”成为了一个原子操作。这样在fork出的子进程执行exec之前就不能读写父进程中已打开的文件了。</p>
+<h2 id="6-pthread-atfork"><a href="#6-pthread-atfork" class="headerlink" title="6. pthread_atfork"></a>6. pthread_atfork</h2><p>如果你不幸真的碰到了一个要解决多线程中fork的问题的时候，可以尝试使用pthread_atfork：<br><figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">pthread_atfork</span><span class="params">(<span class="keyword">void</span> (*prepare)(<span class="keyword">void</span>), <span class="keyword">void</span> (*parent)<span class="keyword">void</span>(), <span class="keyword">void</span> (*child)(<span class="keyword">void</span>))</span></span>;</span><br></pre></td></tr></table></figure></p>
+<ul>
+<li>prepare处理函数由父进程在fork创建子进程前调用，这个函数的任务是获取父进程定义的所有锁。</li>
+<li>parent处理函数是在fork创建了子进程以后，但在fork返回之前在父进程环境中调用的。它的任务是对prepare获取的所有锁解锁。</li>
+<li>child处理函数在fork返回之前在子进程环境中调用，与parent处理函数一样，它也必须解锁所有prepare中所获取的锁。</li>
+</ul>
+<p>因为子进程继承的是父进程的锁的拷贝，所有上述并不是解锁了两次，而是各自独自解锁。可以多次调用pthread_atfork函数从而设置多套fork处理程序，但是使用多个处理程序的时候。处理程序的调用顺序并不相同。parent和child是以它们注册时的顺序调用的，而prepare的调用顺序与注册顺序相反。这样可以允许多个模块注册它们自己的处理程序并且保持锁的层次（类似于多个RAII对象的构造析构层次）。</p>
+<p>需要注意的是pthread_atfork只能清理锁，但不能清理条件变量。在有些系统的实现中条件变量不需要清理。但是在有的系统中，条件变量的实现中包含了锁，这种情况就需要清理。但是目前并没有清理条件变量的接口和方法。</p>
+<h2 id="7-结语"><a href="#7-结语" class="headerlink" title="7. 结语"></a>7. 结语</h2><ul>
+<li>在多线程程序中最好只用fork来执行exec函数，不要对fork出的子进程进行其他任何操作。</li>
+<li>如果确定要在多线程中通过fork出的子进程执行exec函数，那么在fork之前打开文件描述符时需要加上CLOEXEC标志。</li>
+</ul>
+<h2 id="8-参考文献"><a href="#8-参考文献" class="headerlink" title="8. 参考文献"></a>8. 参考文献</h2><ol>
+<li>Randal E.Bryant, David O’Hallaron. <a target="_blank" rel="noopener" href="http://book.douban.com/subject/5333562/">深入理解计算机系统(第2版). 机械工业出版社, 2010</a></li>
+<li>W.Richard Stevens. <a target="_blank" rel="noopener" href="http://book.douban.com/subject/25900403/">UNIX环境高级编程(第3版), 人民邮电出版社, 2014</a></li>
+<li>Linux Man Page. <a target="_blank" rel="noopener" href="http://linux.die.net/man/2/fork">fork(2)</a></li>
+<li>Damian Pietras. <a target="_blank" rel="noopener" href="http://www.linuxprogrammingblog.com/threads-and-fork-think-twice-before-using-them">Threads and fork(): think twice before mixing them, 2009</a></li>
+<li>云风. <a target="_blank" rel="noopener" href="http://blog.codingnow.com/2011/01/fork_multi_thread.html">极不和谐的 fork 多线程程序, 2011</a><br>（完）</li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2015/01/31/thread-safe-singleton-in-cxx/" rel="prev" title="C++中多线程与Singleton的那些事儿">
+      <i class="fa fa-chevron-left"></i> C++中多线程与Singleton的那些事儿
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2015/02/13/independent-blog/" rel="next" title="独立博客">
+      独立博客 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">1. 前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E8%BF%9B%E7%A8%8B%E4%B8%8E%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B"><span class="nav-number">2.</span> <span class="nav-text">2. 进程与线程模型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-fork%E4%B8%8E%E5%A4%9A%E7%BA%BF%E7%A8%8B"><span class="nav-number">3.</span> <span class="nav-text">3. fork与多线程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E4%BA%92%E6%96%A5%E9%94%81"><span class="nav-number">4.</span> <span class="nav-text">4. 互斥锁</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-exec%E4%B8%8E%E6%96%87%E4%BB%B6%E6%8F%8F%E8%BF%B0%E7%AC%A6"><span class="nav-number">5.</span> <span class="nav-text">5. exec与文件描述符</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-pthread-atfork"><span class="nav-number">6.</span> <span class="nav-text">6. pthread_atfork</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E7%BB%93%E8%AF%AD"><span class="nav-number">7.</span> <span class="nav-text">7. 结语</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE"><span class="nav-number">8.</span> <span class="nav-text">8. 参考文献</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Li Yuan"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">Li Yuan</p>
+  <div class="site-description" itemprop="description">种一棵树最好的时间是十年前，其次是现在</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">29</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="mailto:liyuan989@gmail.com" title="Email → mailto:liyuan989@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>Email</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://cn.linkedin.com/in/liyuan989" title="Linkedin → https:&#x2F;&#x2F;cn.linkedin.com&#x2F;in&#x2F;liyuan989" rel="noopener" target="_blank"><i class="fab fa-linkedin fa-fw"></i>Linkedin</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/liyuan989" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;liyuan989" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/origin-989" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;origin-989" rel="noopener" target="_blank"><i class="fa fa-globe fa-fw"></i>Zhihu</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="http://weibo.com/liyuan989" title="Weibo → http:&#x2F;&#x2F;weibo.com&#x2F;liyuan989" rel="noopener" target="_blank"><i class="fab fa-weibo fa-fw"></i>Weibo</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2014 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Li Yuan</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
