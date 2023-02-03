@@ -282,14 +282,14 @@
     
     
     <div class="post-body" itemprop="articleBody">
-          <h1 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h1><p>CH(Contraction Hierarchies)是道路网络最短路径算法之一，其应用收缩(contract)节点的方法将节点分层，显著提高了最短路径的搜索速度。</p>
+          <h1 id="1-概述"><a href="#1-概述" class="headerlink" title="1. 概述"></a>1. 概述</h1><p>CH(Contraction Hierarchies)是道路网络最短路径算法之一，其应用收缩(contract)节点的方法将节点分层，显著提高了最短路径的搜索速度。</p>
 <p>CH算法涵盖数据预处理和路径搜索两个方面，预处理通过收缩节点生成路网图的层次结构，搜索过程利用层次图搜索</p>
-<p>。理解CH算法需要弄懂两个问题：</p>
+<p>理解CH算法需要弄懂两个问题：</p>
 <ul>
 <li>怎么通过收缩(contract)节点</li>
 <li>怎么在分层后的网络中进行路径查询</li>
 </ul>
-<h1 id="整理思想"><a href="#整理思想" class="headerlink" title="整理思想"></a>整理思想</h1><ul>
+<h1 id="2-整理思想"><a href="#2-整理思想" class="headerlink" title="2. 整理思想"></a>2. 整理思想</h1><ul>
 <li>道路网形成的带权有向图G(V,E,c)是一个平面结构</li>
 <li>对于路网图G中的节点，按照某些维度、对每个节点都定义一个优先级level，某种程度上可以认为这个优先级就是节点在图G中的重要性</li>
 <li>然后沿垂直方向将图中的每个节点做沉降，使得每个节点在垂直方向上的高度与其在图G中的优先级一致，沿着节点的高度形成层次结构</li>

@@ -23,12 +23,12 @@
     var NexT = window.NexT || {};
     var CONFIG = {"hostname":"originlee.com","root":"/","images":"/images","scheme":"Muse","version":"8.2.2","exturl":false,"sidebar":{"position":"right","display":"hide","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
   </script>
-<meta name="description" content="概述CH(Contraction Hierarchies)是道路网络最短路径算法之一，其应用收缩(contract)节点的方法将节点分层，显著提高了最短路径的搜索速度。 CH算法涵盖数据预处理和路径搜索两个方面，预处理通过收缩节点生成路网图的层次结构，搜索过程利用层次图搜索 。理解CH算法需要弄懂两个问题：  怎么通过收缩(contract)节点 怎么在分层后的网络中进行路径查询  整理思想 道路">
+<meta name="description" content="1. 概述CH(Contraction Hierarchies)是道路网络最短路径算法之一，其应用收缩(contract)节点的方法将节点分层，显著提高了最短路径的搜索速度。 CH算法涵盖数据预处理和路径搜索两个方面，预处理通过收缩节点生成路网图的层次结构，搜索过程利用层次图搜索 理解CH算法需要弄懂两个问题：  怎么通过收缩(contract)节点 怎么在分层后的网络中进行路径查询  2. 整理">
 <meta property="og:type" content="article">
 <meta property="og:title" content="路径规划-CH算法">
 <meta property="og:url" content="http://originlee.com/2023/02/04/routing-ch-algorithm/index.html">
 <meta property="og:site_name" content="Less is more">
-<meta property="og:description" content="概述CH(Contraction Hierarchies)是道路网络最短路径算法之一，其应用收缩(contract)节点的方法将节点分层，显著提高了最短路径的搜索速度。 CH算法涵盖数据预处理和路径搜索两个方面，预处理通过收缩节点生成路网图的层次结构，搜索过程利用层次图搜索 。理解CH算法需要弄懂两个问题：  怎么通过收缩(contract)节点 怎么在分层后的网络中进行路径查询  整理思想 道路">
+<meta property="og:description" content="1. 概述CH(Contraction Hierarchies)是道路网络最短路径算法之一，其应用收缩(contract)节点的方法将节点分层，显著提高了最短路径的搜索速度。 CH算法涵盖数据预处理和路径搜索两个方面，预处理通过收缩节点生成路网图的层次结构，搜索过程利用层次图搜索 理解CH算法需要弄懂两个问题：  怎么通过收缩(contract)节点 怎么在分层后的网络中进行路径查询  2. 整理">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="http://originlee.com/images/ch_graph1.png">
 <meta property="og:image" content="http://originlee.com/images/ch_graph2.png">
@@ -40,7 +40,7 @@
 <meta property="og:image" content="http://originlee.com/images/stop_condition.png">
 <meta property="og:image" content="http://originlee.com/images/unpack.png">
 <meta property="article:published_time" content="2023-02-03T16:00:00.000Z">
-<meta property="article:modified_time" content="2023-02-03T09:16:57.799Z">
+<meta property="article:modified_time" content="2023-02-03T09:28:17.958Z">
 <meta property="article:author" content="Li Yuan">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="http://originlee.com/images/ch_graph1.png">
@@ -168,7 +168,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%A6%82%E8%BF%B0"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%95%B4%E7%90%86%E6%80%9D%E6%83%B3"><span class="nav-number">2.</span> <span class="nav-text">整理思想</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%94%B6%E7%BC%A9%E8%8A%82%E7%82%B9-Contraction"><span class="nav-number">3.</span> <span class="nav-text">收缩节点 (Contraction )</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%B7%AF%E5%BE%84%E6%90%9C%E7%B4%A2"><span class="nav-number">4.</span> <span class="nav-text">路径搜索</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%AE%97%E6%B3%95%E5%88%86%E6%9E%90"><span class="nav-number">5.</span> <span class="nav-text">算法分析</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%B1%80%E9%99%90"><span class="nav-number">6.</span> <span class="nav-text">局限</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%AE%BA%E6%96%87"><span class="nav-number">7.</span> <span class="nav-text">参考论文</span></a></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-%E6%A6%82%E8%BF%B0"><span class="nav-number">1.</span> <span class="nav-text">1. 概述</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-%E6%95%B4%E7%90%86%E6%80%9D%E6%83%B3"><span class="nav-number">2.</span> <span class="nav-text">2. 整理思想</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-%E6%94%B6%E7%BC%A9%E8%8A%82%E7%82%B9-Contraction"><span class="nav-number">3.</span> <span class="nav-text">3. 收缩节点 (Contraction )</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4-%E8%B7%AF%E5%BE%84%E6%90%9C%E7%B4%A2"><span class="nav-number">4.</span> <span class="nav-text">4. 路径搜索</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5-%E7%AE%97%E6%B3%95%E5%88%86%E6%9E%90"><span class="nav-number">5.</span> <span class="nav-text">5. 算法分析</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#6-%E5%B1%80%E9%99%90"><span class="nav-number">6.</span> <span class="nav-text">6. 局限</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#7-%E5%8F%82%E8%80%83%E8%AE%BA%E6%96%87"><span class="nav-number">7.</span> <span class="nav-text">7. 参考论文</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -296,14 +296,14 @@
     
     
     <div class="post-body" itemprop="articleBody">
-        <h1 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h1><p>CH(Contraction Hierarchies)是道路网络最短路径算法之一，其应用收缩(contract)节点的方法将节点分层，显著提高了最短路径的搜索速度。</p>
+        <h1 id="1-概述"><a href="#1-概述" class="headerlink" title="1. 概述"></a>1. 概述</h1><p>CH(Contraction Hierarchies)是道路网络最短路径算法之一，其应用收缩(contract)节点的方法将节点分层，显著提高了最短路径的搜索速度。</p>
 <p>CH算法涵盖数据预处理和路径搜索两个方面，预处理通过收缩节点生成路网图的层次结构，搜索过程利用层次图搜索</p>
-<p>。理解CH算法需要弄懂两个问题：</p>
+<p>理解CH算法需要弄懂两个问题：</p>
 <ul>
 <li>怎么通过收缩(contract)节点</li>
 <li>怎么在分层后的网络中进行路径查询</li>
 </ul>
-<h1 id="整理思想"><a href="#整理思想" class="headerlink" title="整理思想"></a>整理思想</h1><ul>
+<h1 id="2-整理思想"><a href="#2-整理思想" class="headerlink" title="2. 整理思想"></a>2. 整理思想</h1><ul>
 <li>道路网形成的带权有向图G(V,E,c)是一个平面结构</li>
 <li>对于路网图G中的节点，按照某些维度、对每个节点都定义一个优先级level，某种程度上可以认为这个优先级就是节点在图G中的重要性</li>
 <li>然后沿垂直方向将图中的每个节点做沉降，使得每个节点在垂直方向上的高度与其在图G中的优先级一致，沿着节点的高度形成层次结构</li>
@@ -320,11 +320,11 @@
 </ul>
 <p><strong>伪代码</strong></p>
 <p><img src="/images/ch_main_code.jpg" alt=""></p>
-<h1 id="收缩节点-Contraction"><a href="#收缩节点-Contraction" class="headerlink" title="收缩节点 (Contraction )"></a>收缩节点 (Contraction )</h1><p>根据图G中所有节点更具重要性，存储到一个优先级队列中，其中优先级最低的节点在队顶。 收缩(contract)节点就是将队列中优先级最小的节点删除，并添加捷径(shortcut)以保证最短路径的不变性。</p>
-<p><strong>需要添加捷径(shortcut)</strong></p>
+<h1 id="3-收缩节点-Contraction"><a href="#3-收缩节点-Contraction" class="headerlink" title="3. 收缩节点 (Contraction )"></a>3. 收缩节点 (Contraction )</h1><p>根据图G中所有节点更具重要性，存储到一个优先级队列中，其中优先级最低的节点在队顶。 收缩(contract)节点就是将队列中优先级最小的节点删除，并添加捷径(shortcut)以保证最短路径的不变性。</p>
+<p><strong>3.1. 需要添加捷径(shortcut)</strong></p>
 <p>若收缩(contract)节点u时找到一条最短路径P(v,u,w)则需要添加一条权职为w(v,u)+w(u,w)捷径(shortcut)，流程如下图：</p>
 <p><img src="/images/shortcut.png" alt=""></p>
-<p><strong>不需要添加捷径(shortcut)</strong></p>
+<p><strong>3.2. 不需要添加捷径(shortcut)</strong></p>
 <p>收缩(contract)节点u时找到一条路径P(v,x,y,w)其权重小于P(v,u,w)，则说明存在路径P(v,u,w)不使最短路径则不需要添加捷径(shortcut)。</p>
 <p><img src="/images/witness.png" alt=""></p>
 <p>witness：</p>
@@ -332,14 +332,14 @@
 <li>对于u-v-w，witness就是存在u-w的一条路径，不经过v且起距c(u,w)⇐c(u,w)+(v,w)，也即这条路径可以证明u-v-w不是u-w的唯一最短路径</li>
 <li>witness的计算: 对于节点v，从v的上游邻接点发起dijkstra搜索寻找到v的下游邻接点的最短路径</li>
 </ul>
-<p><strong>节点顺序选择(Node Order Selection)</strong></p>
+<p><strong>3.3. 节点顺序选择(Node Order Selection)</strong></p>
 <p>应用优先级队列存储节点，其中最小优先级节点在队列顶端。 在更新节点的优先级时可能会影响其他的节点，为了有效的解决这种问题CH采用以下三种技术：</p>
 <ul>
 <li>Lazy Updates: 更新队顶节点后，若此节点任然在队顶则移除，若此节点不再对新对顶节点继续更新。重复过程直到确定最小优先级节点并删除</li>
 <li>更新节点的优先级后，同时更新其相邻的节点的优先级</li>
 <li>周期性的更新所有节点优先级，并重新构建优先级队列</li>
 </ul>
-<p><strong>Node Level</strong></p>
+<p><strong>3.4. Node Level</strong></p>
 <p>综上所知，对图G(V,E,c)可以构造任一的node level形成层次结构并保证搜索结果的正确性，但是层次结构的好坏决定搜路性能好坏，因此计算node level的方法就是CH算法的关键</p>
 <p>CH中定义了几个要素来构建node level：</p>
 <ul>
@@ -370,26 +370,26 @@
 <li><p>深度 (Depth)</p>
 </li>
 </ul>
-<p><strong>结束条件</strong></p>
+<p><strong>3.5. 结束条件</strong></p>
 <ul>
 <li>限制被处理的节点个数</li>
 <li>限制最短路径的边数</li>
 </ul>
-<p><strong>Contraction cost</strong></p>
+<p><strong>3.6. Contraction cost</strong></p>
 <ul>
 <li>contraction过程中两个主要过程，一是选择当前最小优先级的节点，二是去掉当前点后要判断是否需要添加shortcut，这是contraction的主要消耗，尤其是后者，因此要在计算时间和准确性之间做妥协</li>
 <li>lazy update:：contraction一个节点都可能带来remain_graph中某些遥远的节点的重要性发生变化，因此精确的做法是每处理一个节点都全局重算一次剩余所有节点的优先级，但是这样代价太高，因此只在处理某个节点的时候才重新计算当前节点的优先级，如果优先级更新后依然最小则处理，如果已不是最小节点，则重新取下一个最小优先级的节点。这个过程是在局部做了优先级更新，但是全局上不能保证</li>
 <li>limit search space：witness计算过程中会发起dijkstra搜索，在找不到最短路径或最短路径节点数很多的情况下，这个搜索规模会非常庞大，因此在witness path搜索的过程中会限制dijkstra搜索的最大规模，比如最多执行多少hop</li>
 <li>存在witness但没找到的情况：这种情况需要添加shortcut边，shortcut边是冗余的、但是对图的语义和正确性没有影响</li>
 </ul>
-<p><strong>Contraction后图的结构</strong></p>
+<p><strong>3.7. Contraction后图的结构</strong></p>
 <ul>
 <li>平面图上理解：平面图G上加shortcut边</li>
 <li>立体层面理解：倒立树, 每个树叉的根都是某个局部最优路径的顶点，同时又是整个路网中的某个中间节点</li>
 </ul>
 <p><img src="/images/ch_tree.jpeg" alt=""></p>
-<h1 id="路径搜索"><a href="#路径搜索" class="headerlink" title="路径搜索"></a>路径搜索</h1><p>路径搜索的第一步是找到源节点到目的节点的最短路径，其中可能包含捷径(shortcut)，第二步是将最短路径中捷径解开(unpack)以得到原图中的路径</p>
-<p><strong>搜索最短路径</strong></p>
+<h1 id="4-路径搜索"><a href="#4-路径搜索" class="headerlink" title="4. 路径搜索"></a>4. 路径搜索</h1><p>路径搜索的第一步是找到源节点到目的节点的最短路径，其中可能包含捷径(shortcut)，第二步是将最短路径中捷径解开(unpack)以得到原图中的路径</p>
+<p><strong>4.1. 搜索最短路径</strong></p>
 <p>对于源节点s采用前向搜索，对于目的节点t采用后向搜索，搜索时应用Dijkstra算法</p>
 <ul>
 <li>前向搜索(Forward )：以节点s的优先级为最低优先级，搜索优先级高的节点</li>
@@ -403,16 +403,16 @@
 <p>（普通箭头表示原图路径，虚线表示捷径，红色箭头表示查找到得最短路径）</p>
 </li>
 </ul>
-<p><strong>中止条件</strong></p>
+<p><strong>4.2. 中止条件</strong></p>
 <p>不可以在前向搜索与后向搜索第一次相遇时停止搜索，要所有相关路径搜索完成后才能结束，这样才能保证最短路径的正确性</p>
 <p> 第一相遇结束问题说明：</p>
 <p><img src="/images/stop_condition.png" alt=""></p>
 <p>图中为节点s到节点t的搜索过程，s的前向搜索第一找到x节点，t的后向搜索第一次找到的也使x节点，若此时结束搜索，路径&lt;s,x,t&gt;并不是最短路径。需要继续搜索余下节点y后才找到最短路径&lt;s,y,t&gt;</p>
-<p><strong>结果路径还原 (Unpack)</strong></p>
+<p><strong>4.3. 结果路径还原 (Unpack)</strong></p>
 <p>由于每一个捷径(shortcut)都是由两条边组成，因此依据此原理不断将最短路径中捷径(shortcut)解开(unpack)即可，例最短路径&lt;u,z&gt;的解开流程如下图：</p>
 <p><img src="/images/unpack.png" alt=""></p>
 <p>（普通箭头为原图边，红色箭头为搜索到得最短路劲，虚线为捷径(shortcut)）</p>
-<h1 id="算法分析"><a href="#算法分析" class="headerlink" title="算法分析"></a>算法分析</h1><ul>
+<h1 id="5-算法分析"><a href="#5-算法分析" class="headerlink" title="5. 算法分析"></a>5. 算法分析</h1><ul>
 <li>算法正确性<ul>
 <li>从G中contranction一个节点v的时候<ul>
 <li>如果remain_graph G’中v的邻接点间连通语义不变、即这个节点有无v对G’都没有影响、不会影响结果的正确性</li>
@@ -431,11 +431,11 @@
 </ul>
 </li>
 </ul>
-<h1 id="局限"><a href="#局限" class="headerlink" title="局限"></a>局限</h1><ul>
+<h1 id="6-局限"><a href="#6-局限" class="headerlink" title="6. 局限"></a>6. 局限</h1><ul>
 <li>基于静态图，不支持动态更新，应用上比如实时路况</li>
 <li>对于起终点s-t，如果存在多条距离相同的路径，CH只能找一条</li>
 </ul>
-<h1 id="参考论文"><a href="#参考论文" class="headerlink" title="参考论文"></a>参考论文</h1><ol>
+<h1 id="7-参考论文"><a href="#7-参考论文" class="headerlink" title="7. 参考论文"></a>7. 参考论文</h1><ol>
 <li>Contraction Hierarchies: Faster and Simpler Hierarchical Routing in Road Networks </li>
 <li>Contraction Hierarchies briefly explained</li>
 </ol>
