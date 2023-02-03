@@ -31,7 +31,7 @@
 <meta property="og:description" content="对于程序来说，如果主进程在子进程还未结束时就已经退出，那么Linux内核会将子进程的父进程ID改为1（也就是init进程），当子进程结束后会由init进程来回收该子进程。 那如果是把进程换成线程的话，会怎么样呢？假设主线程在子线程结束前就已经退出，子线程会发生什么？ 在一些论坛上看到许多人说子线程也会跟着退出，其实这是错误的，原因在于他们混淆了线程退出和进程退出概念。实际的答案是主线程退出后子线程">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2015-04-08T13:37:57.000Z">
-<meta property="article:modified_time" content="2021-03-27T07:15:35.289Z">
+<meta property="article:modified_time" content="2023-02-03T02:46:24.166Z">
 <meta property="article:author" content="Li Yuan">
 <meta name="twitter:card" content="summary">
 
@@ -381,7 +381,7 @@
 
 <div class="copyright">
   &copy; 2014 – 
-  <span itemprop="copyrightYear">2021</span>
+  <span itemprop="copyrightYear">2023</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>
