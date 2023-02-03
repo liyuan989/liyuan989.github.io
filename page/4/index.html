@@ -171,7 +171,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">30</span>
+          <span class="site-state-item-count">31</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -227,6 +227,95 @@
 
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="http://originlee.com/2015/03/14/analysis-google-protobuf-reflection/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="Li Yuan">
+      <meta itemprop="description" content="种一棵树最好的时间是十年前，其次是现在">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Less is more">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2015/03/14/analysis-google-protobuf-reflection/" class="post-title-link" itemprop="url">解析Google Protocol Buffer消息类型的自动反射原理</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2015-03-14 21:46:10" itemprop="dateCreated datePublished" datetime="2015-03-14T21:46:10+08:00">2015-03-14</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/" itemprop="url" rel="index"><span itemprop="name">网络编程</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>Google Protocol Buffer（简称protobuf）是Google内部混合语言数据标准，protobuf是一种紧凑的可扩展的二进制消息格式，适合做网络数据传输、数据存储的消息格式。</p>
+<p>protobuf作为网络传输的消息格式，有两个问题需要解决：</p>
+<ul>
+<li>消息长度。protobuf打包的数据没有自带长度信息，需要应用程序自己在发送和接收消息的时候做切分。</li>
+<li>消息类型。protobuf打包的数据没有自带消息类型，需要由发送方把类型信息传给接收方，接收方再根据收到的消息类型创建具体的Message对象。<br>第一个问题很好解决，可以在protobuf消息的前面附加一个固定长度的HeaderLen即可。</li>
+</ul>
+<p>第二个问题可能很多人会想到在HeaderLen和protobuf消息之间再加上一个消息类型数据段，由接收方根据不同的类型创建相应的Message对象。但其实protobuf已经自带了消息类型反射的功能。</p>
+<h2 id="自动反射"><a href="#自动反射" class="headerlink" title="自动反射"></a>自动反射</h2><p>Google Protocol Buffer具有reflection的功能，可以根据type name创建相应的类型的Message对象。（下图引用自<a target="_blank" rel="noopener" href="http://blog.csdn.net/solstice/article/details/6300108">陈硕的blog</a>）</p>
+<p><a href="/images/blog-analysis_google_protobuf_reflection.png"><img src="/images/blog-analysis_google_protobuf_reflection.png" alt=""></a></p>
+<p>protobuf自动反射功能的关键所在就是Descriptor了，每个Message对象对应一个相应Descriptor。尽管创建Mesasge对象的过程中没有直接调用Descriptor，但是它却在其中起到了关键桥梁的作用。
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2015/03/14/analysis-google-protobuf-reflection/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -568,105 +657,8 @@
 
 
 
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="http://originlee.com/2015/02/07/fork-in-multithread/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="Li Yuan">
-      <meta itemprop="description" content="种一棵树最好的时间是十年前，其次是现在">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Less is more">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2015/02/07/fork-in-multithread/" class="post-title-link" itemprop="url">谨慎使用多线程中的fork</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2015-02-07 11:23:00" itemprop="dateCreated datePublished" datetime="2015-02-07T11:23:00+08:00">2015-02-07</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/%E5%A4%9A%E7%BA%BF%E7%A8%8B/" itemprop="url" rel="index"><span itemprop="name">多线程</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h2 id="1-前言"><a href="#1-前言" class="headerlink" title="1. 前言"></a>1. 前言</h2><p>在单核时代，大家所编写的程序都是单进程/单线程程序。随着计算机硬件技术的发展，进入了多核时代后，为了降低响应时间，重复充分利用多核cpu的资源，使用多进程编程的手段逐渐被人们接受和掌握。然而因为创建一个进程代价比较大，多线程编程的手段也就逐渐被人们认可和喜爱了。</p>
-<p>记得在我刚刚学习线程进程的时候就想，为什么很少见人把多进程和多线程结合起来使用呢，把二者结合起来不是更好吗？现在想想当初真是too young too simple，后文就主要讨论一下这个问题。</p>
-<h2 id="2-进程与线程模型"><a href="#2-进程与线程模型" class="headerlink" title="2. 进程与线程模型"></a>2. 进程与线程模型</h2><p>进程的经典定义就是一个执行中的程序的实例。系统中的每个程序都是运行在某个进程的context中的。context是由程序正确运行所需的状态组成的，这个状态包括存放在存储器中的程序的代码和数据，它的栈、通用目的寄存器的内容、程序计数器（pc）、环境变量以及打开的文件描述符的集合。</p>
-<p>进程主要提供给上层的应用程序两个抽象：</p>
-<ul>
-<li>一个独立的逻辑控制流，它提供一个假象，好像我们程序独占的使用处理器。</li>
-<li>一个私有的虚拟地址空间，它提供一个假象，好像我们的程序独占的使用存储器系统。</li>
-</ul>
-<p>线程，就是运行在进程context中的逻辑流。线程由内核自动调度。每个线程都有它自己的线程context，包括一个唯一的整数线程id、栈、栈指针、程序计数器（pc）、通用目的寄存器和条件码。每个线程和运行在同一进程内的其他线程一起共享进程context的剩余部分。这包括整个用户虚拟地址空间，它是由只读文本（代码）、读/写数据、堆以及所有的共享库代码和数据区域组成。线程也同样共享打开文件的集合。</p>
-<p>即进程是资源管理的最小单位，而线程是程序执行的最小单位。</p>
-<p>在linux系统中，posix线程可以「看做」为一种轻量级的进程，pthread_create创建线程和fork创建进程都是在内核中调用__clone函数创建的，只不过创建线程或进程的时候选项不同，比如是否共享虚拟地址空间、文件描述符等。</p>
-<h2 id="3-fork与多线程"><a href="#3-fork与多线程" class="headerlink" title="3. fork与多线程"></a>3. fork与多线程</h2><p>我们知道通过fork创建的一个子进程几乎但不完全与父进程相同。子进程得到与父进程用户级虚拟地址空间相同的（但是独立的）一份拷贝，包括文本、数据和bss段、堆以及用户栈等。子进程还获得与父进程任何打开文件描述符相同的拷贝，这就意味着子进程可以读写父进程中任何打开的文件，父进程和子进程之间最大的区别在于它们有着不同的pid。</p>
-<p>但是有一点需要注意的是，在linux中，fork的时候只复制当前线程到子进程，在<a target="_blank" rel="noopener" href="http://linux.die.net/man/2/fork">fork(2)-Linux Man Page</a>中有着这样一段相关的描述：</p>
-<blockquote>
-<p>the child process is <strong>created with a single thread</strong>–the one that called fork. the entire virtual address space of the parent is replicated in the child, including the states of mutexes, condition variables, and other pthreads objects; the use of pthread_atfork(3) may be helpful for dealing with problems that this can cause.</p>
-</blockquote>
-<p>也就是说除了调用fork的线程外，其他线程在子进程中“蒸发”了。</p>
-<p>这就是多线程中fork所带来的一切问题的根源所在了。
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2015/02/07/fork-in-multithread/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/3/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/3/">3</a><span class="page-number current">4</span><a class="page-number" href="/page/5/">5</a><a class="page-number" href="/page/6/">6</a><a class="extend next" rel="next" href="/page/5/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/3/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/3/">3</a><span class="page-number current">4</span><a class="page-number" href="/page/5/">5</a><span class="space">&hellip;</span><a class="page-number" href="/page/7/">7</a><a class="extend next" rel="next" href="/page/5/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 

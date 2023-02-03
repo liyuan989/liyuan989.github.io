@@ -26,7 +26,7 @@
 <meta name="description" content="种一棵树最好的时间是十年前，其次是现在">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Less is more">
-<meta property="og:url" content="http://originlee.com/archives/2016/05/index.html">
+<meta property="og:url" content="http://originlee.com/page/7/index.html">
 <meta property="og:site_name" content="Less is more">
 <meta property="og:description" content="种一棵树最好的时间是十年前，其次是现在">
 <meta property="og:locale" content="zh_CN">
@@ -34,19 +34,19 @@
 <meta name="twitter:card" content="summary">
 
 
-<link rel="canonical" href="http://originlee.com/archives/2016/05/">
+<link rel="canonical" href="http://originlee.com/page/7/">
 
 
 <script class="page-configurations">
   // https://hexo.io/docs/variables.html
   CONFIG.page = {
     sidebar: "",
-    isHome : false,
+    isHome : true,
     isPost : false,
     lang   : 'zh-CN'
   };
 </script>
-<title>归档 | Less is more</title>
+<title>Less is more</title>
   
 
 
@@ -226,50 +226,111 @@
 </noscript>
 
 
-    <div class="main-inner archive posts-collapse">
+    <div class="main-inner index posts-expand">
+
+    
 
 
+<div class="post-block">
   
   
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="http://originlee.com/2014/11/03/analysis-of-rbtree/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="Li Yuan">
+      <meta itemprop="description" content="种一棵树最好的时间是十年前，其次是现在">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Less is more">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2014/11/03/analysis-of-rbtree/" class="post-title-link" itemprop="url">红黑树插入和删除的情况分析</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2014-11-03 10:57:00" itemprop="dateCreated datePublished" datetime="2014-11-03T10:57:00+08:00">2014-11-03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E4%B8%8E%E7%AE%97%E6%B3%95/" itemprop="url" rel="index"><span itemprop="name">数据结构与算法</span></a>
+        </span>
+    </span>
+
   
-  <div class="post-block">
-    <div class="post-content">
-      <div class="collection-title">
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>红黑树是特殊二叉查找树的一种，一棵红黑树有以下5种性质：</p>
+<ul>
+<li>根节点为黑色。</li>
+<li>每个节点不是黑色就是红色。</li>
+<li>每个红色节点的两个儿子一定是黑色。</li>
+<li>所有的叶子节点都是黑色。（注：这里的叶子节点并不是真正意义上的叶子节点，而是一种只有颜色属性但不存放数据的节点，而且其没有儿子节点）</li>
+<li>一个红黑树的中任取一个节点，从它所在位置到其他任何叶子节点的简单路径上所经过的黑色节点数相同。<br>这5个性质决定了从根节点到叶子节点的最长路径不可能大于最短路径的2倍。所以红黑树是一个大致平衡的二叉树。跟avl树不同，红黑树并不是严格平衡的，而avl树却是严格平衡的。</li>
+</ul>
+<h2 id="1-插入"><a href="#1-插入" class="headerlink" title="1. 插入"></a>1. 插入</h2><p>首先约定插入的新节点的颜色都为红色。然后将该节点插入的按二叉查找树的规则插入到树中。这个节点后文称为n</p>
+<p>1.  根节点为空。这种情况，将n的颜色改为黑色即可。</p>
+<p>2.  n的父节点为黑色。这种情况不需要做修改。</p>
+<p>3.  n的父节点为红色（根据性质3，n的祖父节点必为黑色）。</p>
+<ul>
+<li><p>n的叔父节点为红色。这种情况，将n的父节点和叔父节点的颜色都改为黑色，若祖父节点是跟节点就将其改为黑色，否则将其颜色改为红色，并以祖父节点为插入的目标节点从情况1开始递归检测。<br><img src="/images/blog-Red-black_tree_insert_1.png" alt=""></p>
+</li>
+<li><p>n的叔父节点为黑色， 且n和n的父节点在同一边（即父节点为祖父的左儿子时，n也是父节点的左儿子。父节点为祖父节点的右儿子时。n也是父节点的右儿子）。以父节点为祖父节的左儿子为例，将父节点改为黑色，祖父节点改为红色，然后以祖父节点为基准右旋。（n为父节点右儿子时做相应的左旋。）<br><img src="/images/blog-Red-black_tree_insert_2.png" alt=""></p>
+</li>
+<li><p>n的叔父节点为黑色，切n和n的父节点不在同一边（即父节点为祖父的左儿子时，n是父节点的右儿子。父节点为祖父节点的右儿子时。n也是父节点左右儿子）。以父节点为祖父节点的左儿子为例。以父节点为基准，进行左旋，然后以父节点为目标插入节点进入情况3的b情况进行操作。</p>
+</li>
+</ul>
+<p><img src="/images/blog-Red-black_tree_insert_3.png" alt=""><br>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2014/11/03/analysis-of-rbtree/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
         
-        <span class="collection-header">还行! 目前共计 31 篇日志。 继续努力。</span>
-      </div>
-
       
-    <div class="collection-year">
-      <span class="collection-header">2016</span>
     </div>
 
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2016-05-01T00:12:09+08:00"
-              content="2016-05-01">
-          05-01
-        </time>
-      </div>
+    
+    
+    
 
-      <div class="post-title">
-          <a class="post-title-link" href="/2016/05/01/eval-expression-in-c-and-cpp/" itemprop="url">
-            <span itemprop="name">老生常谈，C/C++表达式求值问题</span>
-          </a>
-      </div>
-
+    <footer class="post-footer">
+        <div class="post-eof"></div>
       
-    </header>
+    </footer>
   </article>
+</div>
 
 
-    </div>
-  </div>
-  
-  
-  
+
+
+  <nav class="pagination">
+    <a class="extend prev" rel="prev" href="/page/6/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/6/">6</a><span class="page-number current">7</span>
+  </nav>
 
 
 <script>

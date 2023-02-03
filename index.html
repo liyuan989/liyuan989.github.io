@@ -171,7 +171,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">30</span>
+          <span class="site-state-item-count">31</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -227,6 +227,99 @@
 
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="http://originlee.com/2023/02/04/routing-ch-algorithm/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="Li Yuan">
+      <meta itemprop="description" content="种一棵树最好的时间是十年前，其次是现在">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Less is more">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2023/02/04/routing-ch-algorithm/" class="post-title-link" itemprop="url">路径规划-CH算法</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2023-02-04 00:00:00" itemprop="dateCreated datePublished" datetime="2023-02-04T00:00:00+08:00">2023-02-04</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/map/" itemprop="url" rel="index"><span itemprop="name">map</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h1 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h1><p>CH(Contraction Hierarchies)是道路网络最短路径算法之一，其应用收缩(contract)节点的方法将节点分层，显著提高了最短路径的搜索速度。</p>
+<p>CH算法涵盖数据预处理和路径搜索两个方面，预处理通过收缩节点生成路网图的层次结构，搜索过程利用层次图搜索</p>
+<p>。理解CH算法需要弄懂两个问题：</p>
+<ul>
+<li>怎么通过收缩(contract)节点</li>
+<li>怎么在分层后的网络中进行路径查询</li>
+</ul>
+<h1 id="整理思想"><a href="#整理思想" class="headerlink" title="整理思想"></a>整理思想</h1><ul>
+<li>道路网形成的带权有向图G(V,E,c)是一个平面结构</li>
+<li>对于路网图G中的节点，按照某些维度、对每个节点都定义一个优先级level，某种程度上可以认为这个优先级就是节点在图G中的重要性</li>
+<li>然后沿垂直方向将图中的每个节点做沉降，使得每个节点在垂直方向上的高度与其在图G中的优先级一致，沿着节点的高度形成层次结构</li>
+<li>寻找s→t的最短路径时，分别从s和t做正向和反向Dijkstra，Dijkstra的每一步都沿着高度大于当前节点高度的方向搜索，形成两个端点开始向上爬图的搜索过程，双方相遇的某个顶点即为最短路径。由此降低节点搜索规模、加速搜索性能</li>
+<li>由于G中搜索是向上方向，因此当沉降某个节点v破坏了剩余节点的连通性和最短距离时，需要在剩余节点中添加shortcut边E’保持图的语义不变，形成图G*(V,E+E’,c+c’)</li>
+</ul>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2023/02/04/routing-ch-algorithm/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -576,84 +669,8 @@
 
 
 
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="http://originlee.com/2016/02/03/summary-2015/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="Li Yuan">
-      <meta itemprop="description" content="种一棵树最好的时间是十年前，其次是现在">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Less is more">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2016/02/03/summary-2015/" class="post-title-link" itemprop="url">悄然溜走的2015</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2016-02-03 23:20:34" itemprop="dateCreated datePublished" datetime="2016-02-03T23:20:34+08:00">2016-02-03</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/%E7%94%9F%E6%B4%BB%E5%BF%83%E6%83%85/" itemprop="url" rel="index"><span itemprop="name">生活心情</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>又到了这个时候，明天就要收拾东西回家过年了，只不过始发站从去年的苏州变成了北京。回想去年的这个时候还一边加紧的学习技术知识，一边担心来年能不能顺利找到合适的工作，不得不感叹时间确实过的挺快的。</p>
-<p>2015年主要做了2件事。一是换了份工作，5月份从苏州辞职只身来到北京找工作，最终顺利的拿了到6个offer，这也要感谢Jordan、C哥在这个过程中给我的帮助。第二个就是迅速的融入了工作团队，顺利的完成了笑傲江湖新资料片的服务端开发任务，从中熟悉了不少大型端游服务端业务的特点以及处理实际线上问题的方法。</p>
-<p>这一年工作上最大的感悟就是工作上需要professional。这里的professional不是指专业技术，而是指工作的时候不要受个人情绪影响，生活是生活，工作是工作，不能让个人情绪影响工作效率。</p>
-<p>新的一年也希望自己能做好两件事吧，一是熟悉整个项目的代码结构及业务特点，二是学习编译原理和编程语言设计。至于其他的就顺其自然吧，不必强求。</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
   <nav class="pagination">
-    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><span class="space">&hellip;</span><a class="page-number" href="/page/6/">6</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><span class="space">&hellip;</span><a class="page-number" href="/page/7/">7</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 

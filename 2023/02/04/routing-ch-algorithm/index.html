@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico">
+  <link rel="mask-icon" href="/favicon.ico" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.2/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"originlee.com","root":"/","images":"/images","scheme":"Muse","version":"8.2.2","exturl":false,"sidebar":{"position":"right","display":"hide","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
+  </script>
+<meta name="description" content="概述CH(Contraction Hierarchies)是道路网络最短路径算法之一，其应用收缩(contract)节点的方法将节点分层，显著提高了最短路径的搜索速度。 CH算法涵盖数据预处理和路径搜索两个方面，预处理通过收缩节点生成路网图的层次结构，搜索过程利用层次图搜索 。理解CH算法需要弄懂两个问题：  怎么通过收缩(contract)节点 怎么在分层后的网络中进行路径查询  整理思想 道路">
+<meta property="og:type" content="article">
+<meta property="og:title" content="路径规划-CH算法">
+<meta property="og:url" content="http://originlee.com/2023/02/04/routing-ch-algorithm/index.html">
+<meta property="og:site_name" content="Less is more">
+<meta property="og:description" content="概述CH(Contraction Hierarchies)是道路网络最短路径算法之一，其应用收缩(contract)节点的方法将节点分层，显著提高了最短路径的搜索速度。 CH算法涵盖数据预处理和路径搜索两个方面，预处理通过收缩节点生成路网图的层次结构，搜索过程利用层次图搜索 。理解CH算法需要弄懂两个问题：  怎么通过收缩(contract)节点 怎么在分层后的网络中进行路径查询  整理思想 道路">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://originlee.com/images/ch_graph1.png">
+<meta property="og:image" content="http://originlee.com/images/ch_graph2.png">
+<meta property="og:image" content="http://originlee.com/images/ch_main_code.jpg">
+<meta property="og:image" content="http://originlee.com/images/shortcut.png">
+<meta property="og:image" content="http://originlee.com/images/witness.png">
+<meta property="og:image" content="http://originlee.com/images/ch_tree.jpeg">
+<meta property="og:image" content="http://originlee.com/images/query.png">
+<meta property="og:image" content="http://originlee.com/images/stop_condition.png">
+<meta property="og:image" content="http://originlee.com/images/unpack.png">
+<meta property="article:published_time" content="2023-02-03T16:00:00.000Z">
+<meta property="article:modified_time" content="2023-02-03T09:16:57.799Z">
+<meta property="article:author" content="Li Yuan">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://originlee.com/images/ch_graph1.png">
+
+
+<link rel="canonical" href="http://originlee.com/2023/02/04/routing-ch-algorithm/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+<title>路径规划-CH算法 | Less is more</title>
+  
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Less is more</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%A6%82%E8%BF%B0"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%95%B4%E7%90%86%E6%80%9D%E6%83%B3"><span class="nav-number">2.</span> <span class="nav-text">整理思想</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%94%B6%E7%BC%A9%E8%8A%82%E7%82%B9-Contraction"><span class="nav-number">3.</span> <span class="nav-text">收缩节点 (Contraction )</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%B7%AF%E5%BE%84%E6%90%9C%E7%B4%A2"><span class="nav-number">4.</span> <span class="nav-text">路径搜索</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%AE%97%E6%B3%95%E5%88%86%E6%9E%90"><span class="nav-number">5.</span> <span class="nav-text">算法分析</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%B1%80%E9%99%90"><span class="nav-number">6.</span> <span class="nav-text">局限</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%AE%BA%E6%96%87"><span class="nav-number">7.</span> <span class="nav-text">参考论文</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Li Yuan"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">Li Yuan</p>
+  <div class="site-description" itemprop="description">种一棵树最好的时间是十年前，其次是现在</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">31</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="mailto:liyuan989@gmail.com" title="Email → mailto:liyuan989@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>Email</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://cn.linkedin.com/in/liyuan989" title="Linkedin → https:&#x2F;&#x2F;cn.linkedin.com&#x2F;in&#x2F;liyuan989" rel="noopener" target="_blank"><i class="fab fa-linkedin fa-fw"></i>Linkedin</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://github.com/liyuan989" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;liyuan989" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/origin-989" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;origin-989" rel="noopener" target="_blank"><i class="fa fa-globe fa-fw"></i>Zhihu</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="http://weibo.com/liyuan989" title="Weibo → http:&#x2F;&#x2F;weibo.com&#x2F;liyuan989" rel="noopener" target="_blank"><i class="fab fa-weibo fa-fw"></i>Weibo</a>
+      </span>
+  </div>
+  <div class="cc-license site-overview-item animated" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://originlee.com/2023/02/04/routing-ch-algorithm/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="Li Yuan">
+      <meta itemprop="description" content="种一棵树最好的时间是十年前，其次是现在">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Less is more">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          路径规划-CH算法
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2023-02-04 00:00:00" itemprop="dateCreated datePublished" datetime="2023-02-04T00:00:00+08:00">2023-02-04</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/map/" itemprop="url" rel="index"><span itemprop="name">map</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h1 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h1><p>CH(Contraction Hierarchies)是道路网络最短路径算法之一，其应用收缩(contract)节点的方法将节点分层，显著提高了最短路径的搜索速度。</p>
+<p>CH算法涵盖数据预处理和路径搜索两个方面，预处理通过收缩节点生成路网图的层次结构，搜索过程利用层次图搜索</p>
+<p>。理解CH算法需要弄懂两个问题：</p>
+<ul>
+<li>怎么通过收缩(contract)节点</li>
+<li>怎么在分层后的网络中进行路径查询</li>
+</ul>
+<h1 id="整理思想"><a href="#整理思想" class="headerlink" title="整理思想"></a>整理思想</h1><ul>
+<li>道路网形成的带权有向图G(V,E,c)是一个平面结构</li>
+<li>对于路网图G中的节点，按照某些维度、对每个节点都定义一个优先级level，某种程度上可以认为这个优先级就是节点在图G中的重要性</li>
+<li>然后沿垂直方向将图中的每个节点做沉降，使得每个节点在垂直方向上的高度与其在图G中的优先级一致，沿着节点的高度形成层次结构</li>
+<li>寻找s→t的最短路径时，分别从s和t做正向和反向Dijkstra，Dijkstra的每一步都沿着高度大于当前节点高度的方向搜索，形成两个端点开始向上爬图的搜索过程，双方相遇的某个顶点即为最短路径。由此降低节点搜索规模、加速搜索性能</li>
+<li>由于G中搜索是向上方向，因此当沉降某个节点v破坏了剩余节点的连通性和最短距离时，需要在剩余节点中添加shortcut边E’保持图的语义不变，形成图G*(V,E+E’,c+c’)</li>
+</ul>
+<span id="more"></span>
+<p><img src="/images/ch_graph1.png" alt=""></p>
+<p><img src="/images/ch_graph2.png" alt=""></p>
+<p><strong>通俗理解</strong></p>
+<ul>
+<li>找两点s,t之间的最优路径，通常是找到s和t点附近的交通枢纽s’和t’，找到s’和t’之间的最优路径，再s和t的局部区域内，再分别找到s-s’以及t-t’的最优路径，这样就能快速找到s-t的最优路径</li>
+<li>假设s-t存在最优路径s-v1-v2-…-vn-t，那么必然可以将这些节点分成不同的等级，并预先算出低等级点到重要节点的距离和路线，这样算s-t的路线就可以利用预先算好的路线距离快速寻找</li>
+</ul>
+<p><strong>伪代码</strong></p>
+<p><img src="/images/ch_main_code.jpg" alt=""></p>
+<h1 id="收缩节点-Contraction"><a href="#收缩节点-Contraction" class="headerlink" title="收缩节点 (Contraction )"></a>收缩节点 (Contraction )</h1><p>根据图G中所有节点更具重要性，存储到一个优先级队列中，其中优先级最低的节点在队顶。 收缩(contract)节点就是将队列中优先级最小的节点删除，并添加捷径(shortcut)以保证最短路径的不变性。</p>
+<p><strong>需要添加捷径(shortcut)</strong></p>
+<p>若收缩(contract)节点u时找到一条最短路径P(v,u,w)则需要添加一条权职为w(v,u)+w(u,w)捷径(shortcut)，流程如下图：</p>
+<p><img src="/images/shortcut.png" alt=""></p>
+<p><strong>不需要添加捷径(shortcut)</strong></p>
+<p>收缩(contract)节点u时找到一条路径P(v,x,y,w)其权重小于P(v,u,w)，则说明存在路径P(v,u,w)不使最短路径则不需要添加捷径(shortcut)。</p>
+<p><img src="/images/witness.png" alt=""></p>
+<p>witness：</p>
+<ul>
+<li>对于u-v-w，witness就是存在u-w的一条路径，不经过v且起距c(u,w)⇐c(u,w)+(v,w)，也即这条路径可以证明u-v-w不是u-w的唯一最短路径</li>
+<li>witness的计算: 对于节点v，从v的上游邻接点发起dijkstra搜索寻找到v的下游邻接点的最短路径</li>
+</ul>
+<p><strong>节点顺序选择(Node Order Selection)</strong></p>
+<p>应用优先级队列存储节点，其中最小优先级节点在队列顶端。 在更新节点的优先级时可能会影响其他的节点，为了有效的解决这种问题CH采用以下三种技术：</p>
+<ul>
+<li>Lazy Updates: 更新队顶节点后，若此节点任然在队顶则移除，若此节点不再对新对顶节点继续更新。重复过程直到确定最小优先级节点并删除</li>
+<li>更新节点的优先级后，同时更新其相邻的节点的优先级</li>
+<li>周期性的更新所有节点优先级，并重新构建优先级队列</li>
+</ul>
+<p><strong>Node Level</strong></p>
+<p>综上所知，对图G(V,E,c)可以构造任一的node level形成层次结构并保证搜索结果的正确性，但是层次结构的好坏决定搜路性能好坏，因此计算node level的方法就是CH算法的关键</p>
+<p>CH中定义了几个要素来构建node level：</p>
+<ul>
+<li><p>边的差异性 (edge-difference)</p>
+<ul>
+<li>Edge diff定义为将一个节点v从图中去掉后，需要新增的shortcut边数量 - 删除的原始边的数量</li>
+<li>图中含义是去掉某个几点可以使图变的稀疏程度，更稀疏的效果更佳</li>
+<li>现实理解对应越重要的点越延后处理，比如优先去掉边缘节点而不是枢纽节点</li>
+</ul>
+</li>
+<li><p>均匀性 (Uniformity)</p>
+<ul>
+<li><p>目的是使最终形成的层次图更均衡、更扁平，这样搜索过程中需要遍历的高度降低、提升效率，主要有以下几个方面</p>
+<ul>
+<li>neighbours: 去掉某个几点v后，下一次尽量避免处理v的邻接点</li>
+<li>shortcut: 避免使shortcut边折叠的层次过多，过多代表着从shortcut一端到达另一端需要更多层次，还原的时候也需要跟多的消耗</li>
+<li>depth: 表示某个节点在结果层次树里的高度，根节点的话代表的就是整个树的高度，目的也是为把图压的更扁平</li>
+</ul>
+</li>
+<li><p>Notice</p>
+<ul>
+<li>节点的层次(level)和高度(depth)是不同的，如下图中节点共有5个层次、level(a)=5，但是depth(a)=2<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">     a</span><br><span class="line">  &#x2F; &#x2F;| \</span><br><span class="line"> b &#x2F; |  \</span><br><span class="line">  &#x2F;  |   d</span><br><span class="line">c    |</span><br><span class="line">     e</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>深度 (Depth)</p>
+</li>
+</ul>
+<p><strong>结束条件</strong></p>
+<ul>
+<li>限制被处理的节点个数</li>
+<li>限制最短路径的边数</li>
+</ul>
+<p><strong>Contraction cost</strong></p>
+<ul>
+<li>contraction过程中两个主要过程，一是选择当前最小优先级的节点，二是去掉当前点后要判断是否需要添加shortcut，这是contraction的主要消耗，尤其是后者，因此要在计算时间和准确性之间做妥协</li>
+<li>lazy update:：contraction一个节点都可能带来remain_graph中某些遥远的节点的重要性发生变化，因此精确的做法是每处理一个节点都全局重算一次剩余所有节点的优先级，但是这样代价太高，因此只在处理某个节点的时候才重新计算当前节点的优先级，如果优先级更新后依然最小则处理，如果已不是最小节点，则重新取下一个最小优先级的节点。这个过程是在局部做了优先级更新，但是全局上不能保证</li>
+<li>limit search space：witness计算过程中会发起dijkstra搜索，在找不到最短路径或最短路径节点数很多的情况下，这个搜索规模会非常庞大，因此在witness path搜索的过程中会限制dijkstra搜索的最大规模，比如最多执行多少hop</li>
+<li>存在witness但没找到的情况：这种情况需要添加shortcut边，shortcut边是冗余的、但是对图的语义和正确性没有影响</li>
+</ul>
+<p><strong>Contraction后图的结构</strong></p>
+<ul>
+<li>平面图上理解：平面图G上加shortcut边</li>
+<li>立体层面理解：倒立树, 每个树叉的根都是某个局部最优路径的顶点，同时又是整个路网中的某个中间节点</li>
+</ul>
+<p><img src="/images/ch_tree.jpeg" alt=""></p>
+<h1 id="路径搜索"><a href="#路径搜索" class="headerlink" title="路径搜索"></a>路径搜索</h1><p>路径搜索的第一步是找到源节点到目的节点的最短路径，其中可能包含捷径(shortcut)，第二步是将最短路径中捷径解开(unpack)以得到原图中的路径</p>
+<p><strong>搜索最短路径</strong></p>
+<p>对于源节点s采用前向搜索，对于目的节点t采用后向搜索，搜索时应用Dijkstra算法</p>
+<ul>
+<li>前向搜索(Forward )：以节点s的优先级为最低优先级，搜索优先级高的节点</li>
+<li>后向搜索(Backward)：以节点t的优先级为最低优先级，搜索有优先级高的节点</li>
+</ul>
+<p><img src="/images/query.png" alt=""></p>
+<ul>
+<li><p>图(a): 描述了源节点u到目的节点z的最短路径搜索流程，其中u→v为前向搜索，z→v为后向搜索</p>
+</li>
+<li><p>图(b): 描述了源节点u到目的节点y的最短路径搜索流程，其中u→v为前向搜索，y→v为后向搜</p>
+<p>（普通箭头表示原图路径，虚线表示捷径，红色箭头表示查找到得最短路径）</p>
+</li>
+</ul>
+<p><strong>中止条件</strong></p>
+<p>不可以在前向搜索与后向搜索第一次相遇时停止搜索，要所有相关路径搜索完成后才能结束，这样才能保证最短路径的正确性</p>
+<p> 第一相遇结束问题说明：</p>
+<p><img src="/images/stop_condition.png" alt=""></p>
+<p>图中为节点s到节点t的搜索过程，s的前向搜索第一找到x节点，t的后向搜索第一次找到的也使x节点，若此时结束搜索，路径&lt;s,x,t&gt;并不是最短路径。需要继续搜索余下节点y后才找到最短路径&lt;s,y,t&gt;</p>
+<p><strong>结果路径还原 (Unpack)</strong></p>
+<p>由于每一个捷径(shortcut)都是由两条边组成，因此依据此原理不断将最短路径中捷径(shortcut)解开(unpack)即可，例最短路径&lt;u,z&gt;的解开流程如下图：</p>
+<p><img src="/images/unpack.png" alt=""></p>
+<p>（普通箭头为原图边，红色箭头为搜索到得最短路劲，虚线为捷径(shortcut)）</p>
+<h1 id="算法分析"><a href="#算法分析" class="headerlink" title="算法分析"></a>算法分析</h1><ul>
+<li>算法正确性<ul>
+<li>从G中contranction一个节点v的时候<ul>
+<li>如果remain_graph G’中v的邻接点间连通语义不变、即这个节点有无v对G’都没有影响、不会影响结果的正确性</li>
+<li>如果remain_graph G’中v的领节点间连通语义发生了变化、则需要添加shortcut边代表原始边、维持图的语义不变，确保结果的正确性</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>为什么向上搜索<ul>
+<li>对G中某个点v做contraction处理后，从remain_graph G’中出发的点都不会下降到v，也即没有向下的搜索过程，如果每个节点都是一个独立的level的话、则必然也不存在平行的搜索，因此搜索必然是向上的</li>
+</ul>
+</li>
+<li>为什么是快的<ul>
+<li>搜索空间小：n个节点可以形成n个层次，搜索过程是向上的，因此随着层级上升，搜索空间越来越小</li>
+<li>最优路径预计算和缓存：shortcut边实际上代表的是某两个点之间的最短路径，比如一层嵌套shortcut边代表的是跨越一个中间节点的两点简的最短路径，预处理过程实际上在计算和存储某两点间最短路线和距离的过程</li>
+</ul>
+</li>
+</ul>
+<h1 id="局限"><a href="#局限" class="headerlink" title="局限"></a>局限</h1><ul>
+<li>基于静态图，不支持动态更新，应用上比如实时路况</li>
+<li>对于起终点s-t，如果存在多条距离相同的路径，CH只能找一条</li>
+</ul>
+<h1 id="参考论文"><a href="#参考论文" class="headerlink" title="参考论文"></a>参考论文</h1><ol>
+<li>Contraction Hierarchies: Faster and Simpler Hierarchical Routing in Road Networks </li>
+<li>Contraction Hierarchies briefly explained</li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2023/02/03/routing-algorithm/" rel="prev" title="路径规划算法综述">
+                  <i class="fa fa-chevron-left"></i> 路径规划算法综述
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    
+  <div class="comments" id="disqus_thread">
+    <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 2014 – 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Li Yuan</span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+<script>
+  var disqus_config = function() {
+    this.page.url = "http://originlee.com/2023/02/04/routing-ch-algorithm/";
+    this.page.identifier = "2023/02/04/routing-ch-algorithm/";
+    this.page.title = "路径规划-CH算法";
+    };
+  NexT.utils.loadComments('#disqus_thread', () => {
+    if (window.DISQUS) {
+      DISQUS.reset({
+        reload: true,
+        config: disqus_config
+      });
+    } else {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://originlee.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', '' + +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  });
+</script>
+
+</body>
+</html>
