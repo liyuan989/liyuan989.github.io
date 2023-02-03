@@ -171,14 +171,14 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">29</span>
+          <span class="site-state-item-count">30</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-count">9</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
   </nav>
@@ -227,6 +227,89 @@
 
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="http://originlee.com/2015/04/08/influence-of-main-threads-exiting-to-child-thread/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="Li Yuan">
+      <meta itemprop="description" content="种一棵树最好的时间是十年前，其次是现在">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Less is more">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2015/04/08/influence-of-main-threads-exiting-to-child-thread/" class="post-title-link" itemprop="url">主线程退出对子线程的影响</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2015-04-08 21:37:57" itemprop="dateCreated datePublished" datetime="2015-04-08T21:37:57+08:00">2015-04-08</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E5%A4%9A%E7%BA%BF%E7%A8%8B/" itemprop="url" rel="index"><span itemprop="name">多线程</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>对于程序来说，如果主进程在子进程还未结束时就已经退出，那么Linux内核会将子进程的父进程ID改为1（也就是init进程），当子进程结束后会由init进程来回收该子进程。</p>
+<p>那如果是把进程换成线程的话，会怎么样呢？假设主线程在子线程结束前就已经退出，子线程会发生什么？</p>
+<p>在一些论坛上看到许多人说子线程也会跟着退出，其实这是错误的，原因在于他们混淆了线程退出和进程退出概念。实际的答案是主线程退出后子线程的状态依赖于它所在的进程，如果进程没有退出的话子线程依然正常运转。如果进程退出了，那么它所有的线程都会退出，所以子线程也就退出了。</p>
+<h2 id="主线程先退出"><a href="#主线程先退出" class="headerlink" title="主线程先退出"></a>主线程先退出</h2><p>先来看一个主线程先退出的例子：<br><figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;pthread.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;unistd.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span>* <span class="title">func</span><span class="params">(<span class="keyword">void</span>* arg)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">pthread_t</span> main_tid = *<span class="keyword">static_cast</span>&lt;<span class="keyword">pthread_t</span>*&gt;(arg);</span><br><span class="line">    pthread_cancel(main_tid);</span><br><span class="line">    <span class="keyword">while</span> (<span class="literal">true</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">//printf(&quot;child loops\n&quot;);</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span>* argv[])</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">pthread_t</span> main_tid = pthread_self();</span><br><span class="line">    <span class="keyword">pthread_t</span> tid = <span class="number">0</span>;</span><br><span class="line">    pthread_create(&amp;tid, <span class="literal">NULL</span>, func, &amp;main_tid);</span><br><span class="line">    <span class="keyword">while</span> (<span class="literal">true</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;main loops\n&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    sleep(<span class="number">1</span>);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;main exit\n&quot;</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>把主线程的线程号传给子线程，在子线程中通过pthread_cancel终止主线程使其退出。运行程序，可以发现在打印了一定数量的「main loops」之后程序就挂起了，但却没有退出。
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2015/04/08/influence-of-main-threads-exiting-to-child-thread/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -565,87 +648,6 @@
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2015/03/14/analysis-google-protobuf-reflection/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="http://originlee.com/2015/03/08/caesar-cipher/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="Li Yuan">
-      <meta itemprop="description" content="种一棵树最好的时间是十年前，其次是现在">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Less is more">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2015/03/08/caesar-cipher/" class="post-title-link" itemprop="url">凯撒密码</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2015-03-08 00:30:45" itemprop="dateCreated datePublished" datetime="2015-03-08T00:30:45+08:00">2015-03-08</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E4%B8%8E%E7%AE%97%E6%B3%95/" itemprop="url" rel="index"><span itemprop="name">数据结构与算法</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>在密码学中，「凯撒密码」是一种最简单且最广为人知的加密技术。它是一种替换加密技术，明文中所有字母都在字母表上向后或向前按照一个固定数目进行偏移后被替换成密文。例如当偏移量为3时，所有的A被替换为D，B被替换为E。这个加密方法是以凯撒的名字命名的，因为当年凯撒用此方法与将军们进行联络。</p>
-<h2 id="方法"><a href="#方法" class="headerlink" title="方法"></a>方法</h2><p>凯撒密码的替换方法是通过排列明文和密文字母表，密文字母通过将明文字母向左或向右移动一个固定数目的位置。例如当偏移量是左移3时（解密是密钥就是3）：<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">明文：ABCDEFGHIJK</span><br><span class="line">密文：DEFGHIJKLMN</span><br></pre></td></tr></table></figure><br>使用时，加密者查找明文字母表中需要加密的消息中每一个字母所在的位置，并写下密文字母表中对应的字母。解密者则根据事先已知的密钥（偏移量和偏移方向）反过来操作，得到传递的实质信息。例如：<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">明文：HELLO WORLD</span><br><span class="line">密文：EBIIL TLOIA</span><br></pre></td></tr></table></figure><br>凯撒密码的加密解密方法还可以用数学的求余来计算。用数字0-25代表26个英文字母，这样密钥偏移量的加密方法即为：<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">f(x) &#x3D; (x + n) mod 26</span><br></pre></td></tr></table></figure><br>解密方法为：<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">g(x) &#x3D; (x - n) mod 26</span><br></pre></td></tr></table></figure><br>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2015/03/08/caesar-cipher/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>

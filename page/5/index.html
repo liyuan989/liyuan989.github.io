@@ -171,14 +171,14 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">29</span>
+          <span class="site-state-item-count">30</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-count">9</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
   </nav>
@@ -227,6 +227,90 @@
 
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="http://originlee.com/2015/01/31/thread-safe-singleton-in-cxx/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="Li Yuan">
+      <meta itemprop="description" content="种一棵树最好的时间是十年前，其次是现在">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Less is more">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2015/01/31/thread-safe-singleton-in-cxx/" class="post-title-link" itemprop="url">C++中多线程与Singleton的那些事儿</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2015-01-31 15:06:00" itemprop="dateCreated datePublished" datetime="2015-01-31T15:06:00+08:00">2015-01-31</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C++</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>前段时间在网上看到了个的面试题，大概意思是如何在不使用锁和C++11的情况下，用C++实现线程安全的Singleton。</p>
+<p>看到这个题目后，第一个想法就是用Scott Meyer在《Effective C++》中提到的，在static成员函数中构造local static变量的方法来实现，但是经过一番查找、思考，才明白这种实现在某些情况下是有问题的。本文主要将从最基本的单线程中的Singleton开始，慢慢讲述多线程与Singleton的那些事。</p>
+<h2 id="单线程"><a href="#单线程" class="headerlink" title="单线程"></a>单线程</h2><p>在单线程下，下面这个是常见的写法：<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Singleton</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">static</span> T&amp; <span class="title">getInstance</span><span class="params">()</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (!value_)</span><br><span class="line">        &#123;</span><br><span class="line">            value_ = <span class="keyword">new</span> <span class="built_in">T</span>();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> *value_;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="built_in">Singleton</span>();</span><br><span class="line">    ~<span class="built_in">Singleton</span>();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> T* value_;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line">T* Singleton&lt;T&gt;::value_ = <span class="literal">NULL</span>;</span><br></pre></td></tr></table></figure><br>在单线程中，这样的写法是可以正确使用的，但是在多线程中就不行了。</p>
+<h2 id="多线程加锁"><a href="#多线程加锁" class="headerlink" title="多线程加锁"></a>多线程加锁</h2><p>在多线程的环境中，上面单线程的写法就会产生race condition从而产生多次初始化的情况。要想在多线程下工作，最容易想到的就是用锁来保护shared variable了。下面是伪代码：<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Singleton</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">static</span> T&amp; <span class="title">getInstance</span><span class="params">()</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="function">MutexGuard <span class="title">guard</span><span class="params">(mutex_)</span>  <span class="comment">// RAII</span></span></span><br><span class="line"><span class="function">            <span class="title">if</span> <span class="params">(!value_)</span></span></span><br><span class="line"><span class="function">            </span>&#123;</span><br><span class="line">                value_ = <span class="keyword">new</span> <span class="built_in">T</span>();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> *value_;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="built_in">Singleton</span>();</span><br><span class="line">    ~<span class="built_in">Singleton</span>();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> T*     value_;</span><br><span class="line">    <span class="keyword">static</span> Mutex  mutex_;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line">T* Singleton&lt;T&gt;::value_ = <span class="literal">NULL</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line">Mutex Singleton&lt;T&gt;::mutex_;</span><br></pre></td></tr></table></figure><br>这样在多线程下就能正常工作了。这时候，可能有人会站出来说这种做法每次调用getInstance的时候都会进入临界区，在频繁调用getInstance的时候会比较影响性能。这个时候，为了解决这个问题，DCL写法就被聪明的先驱者发明了。</p>
+<h2 id="DCL"><a href="#DCL" class="headerlink" title="DCL"></a>DCL</h2><p>DCL即double-checked locking。在普通加锁的写法中，每次调用getInstance都会进入临界区，这样在heavy contention的情况下该函数就会成为系统性能的瓶颈，这个时候就有先驱者们想到了DCL写法，也就是进行两次check，当第一次check为假时，才加锁进行第二次check：<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Singleton</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">static</span> T&amp; <span class="title">getInstance</span><span class="params">()</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="keyword">if</span>(!value_)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="function">MutexGuard <span class="title">guard</span><span class="params">(mutex_)</span></span>;</span><br><span class="line">            <span class="keyword">if</span> (!value_)</span><br><span class="line">            &#123;</span><br><span class="line">                value_ = <span class="keyword">new</span> <span class="built_in">T</span>();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> *value_;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="built_in">Singleton</span>();</span><br><span class="line">    ~<span class="built_in">Singleton</span>();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> T*     value_;</span><br><span class="line">    <span class="keyword">static</span> Mutex  mutex_;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line">T* Singleton&lt;T&gt;::value_ = <span class="literal">NULL</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line">Mutex Singleton&lt;T&gt;::mutex_;</span><br></pre></td></tr></table></figure><br>是不是觉得这样就完美啦？其实在一段时间内，大家都以为这是正确的、有效的做法。实际上却不是这样的。幸运的是，后来有大牛们发现了DCL中的问题，避免了这样错误的写法在更多的程序代码中出现。
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2015/01/31/thread-safe-singleton-in-cxx/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -557,96 +641,6 @@
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2014/12/30/a-implemention-for-circular-queue/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="http://originlee.com/2014/12/18/simply-implemention-for-boost-bind/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="Li Yuan">
-      <meta itemprop="description" content="种一棵树最好的时间是十年前，其次是现在">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Less is more">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2014/12/18/simply-implemention-for-boost-bind/" class="post-title-link" itemprop="url">boost::bind的简单实现</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2014-12-18 08:59:00" itemprop="dateCreated datePublished" datetime="2014-12-18T08:59:00+08:00">2014-12-18</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C++</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>在上一篇blog中简单的实现了boost::function，支持带有2个参数的函数/函数指针，函数对象，函数适配器/bind类，以及带有1个参数的成员函数指针。</p>
-<p>本文接着来介绍如何实现一个简单的boost::bind。</p>
-<p>基本目标如下：</p>
-<ul>
-<li>支持接收0个参数的函数/函数指针，函数对象。</li>
-<li>支持接收1个参数的函数/函数指针，函数对象。</li>
-<li>支持接收2个参数的函数/函数指针，函数对象。</li>
-</ul>
-<h2 id="1-实现"><a href="#1-实现" class="headerlink" title="1. 实现"></a>1. 实现</h2><p>首先，解决占位符的问题：<br><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="keyword">namespace</span></span><br><span class="line">&#123;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">Placeholders1</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">&#125; _1;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">Placeholders2</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">&#125; _2;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>使用匿名namespace的原因是防止不同编译单元中的命名冲突， 让占位符对象只在其所在的编译单元中可见。</p>
-<p>在boost::bind源码中主要是通过2个list表维持各种相关信息。一个bindlist表维持了bind接收的绑定参数，包括占位符，用户传入的变量等。一个calllist维持了调用bind返回的对象时所传入的参数信息。它们的通过继承层次的方式来表现的。</p>
-<p>下面这个继承层次的每一个类都要作为对应的bindlist和calllist层次中的基类，它们分别保存了bind接收的绑定参数信息（用户传入的变量，占位符），以及调用bind返回的对象时所传入的参数信息。
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2014/12/18/simply-implemention-for-boost-bind/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>

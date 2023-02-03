@@ -171,14 +171,14 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">29</span>
+          <span class="site-state-item-count">30</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-count">9</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
   </nav>
@@ -227,6 +227,102 @@
 
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="http://originlee.com/2015/05/22/read-write-in-mutithread-need-lock/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="Li Yuan">
+      <meta itemprop="description" content="种一棵树最好的时间是十年前，其次是现在">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Less is more">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2015/05/22/read-write-in-mutithread-need-lock/" class="post-title-link" itemprop="url">多线程读写shared_ptr需要加锁</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2015-05-22 21:52:15" itemprop="dateCreated datePublished" datetime="2015-05-22T21:52:15+08:00">2015-05-22</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C++</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>在现代C++中，通过使用shared_ptr这样的智能指针能够很好的降低内存泄漏的可能性，但是在多线程中无保护的读写shared_ptr则有可能带来race condition的情况。</p>
+<p>对此，<a target="_blank" rel="noopener" href="http://cpp.ezbty.org//myfiles/boost/libs/smart_ptr/shared_ptr.htm#ThreadSafety">boost官方文档</a>是这样描述的：</p>
+<blockquote>
+<p><strong>shared_ptr</strong> 对象提供与内建类型一样的线程安全级别。一个 <strong>shared_ptr</strong> 实例可以同时被多个线程“读”（仅使用不变操作进行访问）。不同的 <strong>shared_ptr</strong> 实例可以同时被多个线程“写入”（使用类似<strong>operator=</strong> 或 <strong>reset</strong> 这样的可变操作进行访问）（即使这些实例是拷贝，而且共享下层的引用计数）。</p>
+<p>从 Boost 版本 1.33.0 开始，<strong>shared_ptr</strong> 在以下平台上使用了 lock-free 实现：</p>
+<ul>
+<li>GNU GCC on x86 or x86-64;</li>
+<li>GNU GCC on IA64;</li>
+<li>Metrowerks CodeWarrior on PowerPC;</li>
+<li>GNU GCC on PowerPC;</li>
+<li>Windows.<br>可以看到现在版本的shared_ptr本身的引用计数是安全并且无锁的，但是shard_ptr对象本身则不是，为什么呢？</li>
+</ul>
+</blockquote>
+<p>简单来说，因为shared_ptr有不止引用计数一个数据成员，它有指向引用计数对象的指针和指向实际数据的指针这两个成员，虽然引用计数本身是原子化的，但是两个成员一起作为一个对象在多线程环境下读写时，就不能原子化了。</p>
+<h2 id="数据结构模型"><a href="#数据结构模型" class="headerlink" title="数据结构模型"></a>数据结构模型</h2><p><img src="/images/blog-shared_ptr_1.png" alt=""></p>
+<p>shared_ptr是引用计数类型的智能指针，并且绝大多数实现都是存放在堆上的空间里。</p>
+<p>具体来说，一个shared_ptr<Foo>包含两个成员，一个是指向实际数据Foo的指针，一个是指向堆上的引用计数对象的指针ref_count。引用计数对象有多个数据成员，具体如上图所示，其中allocator和deleter是可选的。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2015/05/22/read-write-in-mutithread-need-lock/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -565,89 +661,6 @@
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2015/04/18/difference-between-block-nonblock-and-sync-async/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="http://originlee.com/2015/04/08/influence-of-main-threads-exiting-to-child-thread/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="Li Yuan">
-      <meta itemprop="description" content="种一棵树最好的时间是十年前，其次是现在">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Less is more">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2015/04/08/influence-of-main-threads-exiting-to-child-thread/" class="post-title-link" itemprop="url">主线程退出对子线程的影响</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2015-04-08 21:37:57" itemprop="dateCreated datePublished" datetime="2015-04-08T21:37:57+08:00">2015-04-08</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/%E5%A4%9A%E7%BA%BF%E7%A8%8B/" itemprop="url" rel="index"><span itemprop="name">多线程</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>对于程序来说，如果主进程在子进程还未结束时就已经退出，那么Linux内核会将子进程的父进程ID改为1（也就是init进程），当子进程结束后会由init进程来回收该子进程。</p>
-<p>那如果是把进程换成线程的话，会怎么样呢？假设主线程在子线程结束前就已经退出，子线程会发生什么？</p>
-<p>在一些论坛上看到许多人说子线程也会跟着退出，其实这是错误的，原因在于他们混淆了线程退出和进程退出概念。实际的答案是主线程退出后子线程的状态依赖于它所在的进程，如果进程没有退出的话子线程依然正常运转。如果进程退出了，那么它所有的线程都会退出，所以子线程也就退出了。</p>
-<h2 id="主线程先退出"><a href="#主线程先退出" class="headerlink" title="主线程先退出"></a>主线程先退出</h2><p>先来看一个主线程先退出的例子：<br><figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;pthread.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;unistd.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span>* <span class="title">func</span><span class="params">(<span class="keyword">void</span>* arg)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">pthread_t</span> main_tid = *<span class="keyword">static_cast</span>&lt;<span class="keyword">pthread_t</span>*&gt;(arg);</span><br><span class="line">    pthread_cancel(main_tid);</span><br><span class="line">    <span class="keyword">while</span> (<span class="literal">true</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">//printf(&quot;child loops\n&quot;);</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span>* argv[])</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">pthread_t</span> main_tid = pthread_self();</span><br><span class="line">    <span class="keyword">pthread_t</span> tid = <span class="number">0</span>;</span><br><span class="line">    pthread_create(&amp;tid, <span class="literal">NULL</span>, func, &amp;main_tid);</span><br><span class="line">    <span class="keyword">while</span> (<span class="literal">true</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;main loops\n&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    sleep(<span class="number">1</span>);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;main exit\n&quot;</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>把主线程的线程号传给子线程，在子线程中通过pthread_cancel终止主线程使其退出。运行程序，可以发现在打印了一定数量的「main loops」之后程序就挂起了，但却没有退出。
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2015/04/08/influence-of-main-threads-exiting-to-child-thread/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
